@@ -1,0 +1,71 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+<style>
+  form.filtros { display: flex; flex-wrap: wrap; gap: 1em; align-items: end; margin-bottom: 1.5em; }
+  form.filtros label { display: block; font-weight: bold; margin-bottom: .2em; }
+  table.fluxo { width: 100%; }
+  table.fluxo td.num, table.fluxo th.num { text-align: right; white-space: nowrap; }
+  table.fluxo td.neg { color: #ba2121; }
+  table.fluxo tr.destaque td { font-weight: bold; background: var(--darkened-bg); }
+  table.fluxo th.grupo { text-align: center; border-bottom: 1px solid var(--hairline-color); }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Início</a> &rsaquo; Fluxo de caixa</div>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="filtros">
+  {% for campo in form %}
+  <div>{{ campo.label_tag }}{% if campo.name == "inicio" or campo.name == "fim" %}<input type="date" name="{{ campo.name }}" value="{{ campo.value|date:'Y-m-d'|default:campo.value }}">{% else %}{{ campo }}{% endif %}</div>
+  {% endfor %}
+  <div><input type="submit" value="Atualizar"></div>
+</form>
+{{ form.non_field_errors }}
+
+{% if r %}
+<p>
+  {% if por_obra %}Filtrado por obra: o acumulado parte de zero (o saldo bancário não é separado por obra).
+  {% else %}Saldo bancário no início do período: <strong>R$ {{ r.saldo_inicial|floatformat:"2g" }}</strong>.{% endif %}
+  "Previsto" é o saldo em aberto das parcelas; "realizado" são as baixas já lançadas.
+</p>
+<table class="fluxo">
+  <thead>
+    <tr>
+      <th rowspan="2">Período</th>
+      <th colspan="3" class="grupo">Realizado</th>
+      <th colspan="3" class="grupo">Previsto</th>
+      <th rowspan="2" class="num">Saldo acumulado</th>
+    </tr>
+    <tr>
+      <th class="num">Recebido</th><th class="num">Pago</th><th class="num">Resultado</th>
+      <th class="num">A receber</th><th class="num">A pagar</th><th class="num">Resultado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="destaque">
+      <td>Vencidos em aberto (antes do período)</td>
+      <td></td><td></td><td></td>
+      <td class="num">{{ r.atrasados.a_receber|floatformat:"2g" }}</td>
+      <td class="num">{{ r.atrasados.a_pagar|floatformat:"2g" }}</td>
+      <td class="num {% if r.atrasados.previsto < 0 %}neg{% endif %}">{{ r.atrasados.previsto|floatformat:"2g" }}</td>
+      <td class="num {% if r.atrasados.saldo < 0 %}neg{% endif %}">{{ r.atrasados.saldo|floatformat:"2g" }}</td>
+    </tr>
+    {% for l in r.linhas %}
+    <tr>
+      <td>{% if agrupamento == "mes" %}{{ l.periodo|date:"F/Y"|capfirst }}{% elif agrupamento == "semana" %}Semana de {{ l.periodo|date:"d/m/Y" }}{% else %}{{ l.periodo|date:"d/m/Y (D)" }}{% endif %}</td>
+      <td class="num">{{ l.recebido|floatformat:"2g" }}</td>
+      <td class="num">{{ l.pago|floatformat:"2g" }}</td>
+      <td class="num {% if l.realizado < 0 %}neg{% endif %}">{{ l.realizado|floatformat:"2g" }}</td>
+      <td class="num">{{ l.a_receber|floatformat:"2g" }}</td>
+      <td class="num">{{ l.a_pagar|floatformat:"2g" }}</td>
+      <td class="num {% if l.previsto < 0 %}neg{% endif %}">{{ l.previsto|floatformat:"2g" }}</td>
+      <td class="num {% if l.saldo < 0 %}neg{% endif %}"><strong>{{ l.saldo|floatformat:"2g" }}</strong></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

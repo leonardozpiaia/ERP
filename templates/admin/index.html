@@ -1,0 +1,16 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<div id="content-main">
+  <div class="app-relatorios module">
+    <table style="width: 100%">
+      <caption><span class="section">Relatórios</span></caption>
+      <tr><th scope="row"><a href="{% url 'financeiro:fluxo_caixa' %}">Fluxo de caixa</a></th></tr>
+      <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelapagar_changelist' %}?situacao=vencidas">Contas a pagar vencidas</a></th></tr>
+      <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelareceber_changelist' %}?situacao=vencidas">Contas a receber vencidas</a></th></tr>
+      <tr><th scope="row"><a href="{% url 'admin:orcamento_orcamento_changelist' %}">EAP e orçado × comprado × pago (abra o orçamento)</a></th></tr>
+    </table>
+  </div>
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+</div>
+{% endblock %}

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "obras",
     "orcamento",
     "suprimentos",
+    "financeiro",
 ]
 
 MIDDLEWARE = [

@@ -24,13 +24,13 @@
 
 {% block content %}
 <h1>Orçado × comprado &mdash; {{ orcamento.obra }} (v{{ orcamento.versao }})</h1>
-<p>Valores de custo direto, sem BDI. "Comprado" soma os pedidos aprovados, parcialmente entregues e entregues. <a href="{% url 'orcamento:eap' orcamento.pk %}">Ver EAP</a></p>
+<p>Valores de custo direto, sem BDI. "Comprado" soma os pedidos aprovados, parcialmente entregues e entregues. "Pago" são as baixas dos títulos a pagar, distribuídas pela apropriação por etapa. <a href="{% url 'orcamento:eap' orcamento.pk %}">Ver EAP</a></p>
 
 <table class="oc">
   <thead>
     <tr>
       <th>Código</th><th>Etapa</th>
-      <th class="num">Orçado</th><th class="num">Comprado</th><th class="num">Saldo</th><th class="num">% comprado</th>
+      <th class="num">Orçado</th><th class="num">Comprado</th><th class="num">Saldo</th><th class="num">% comprado</th><th class="num">Pago</th>
     </tr>
   </thead>
   <tbody>
@@ -42,9 +42,10 @@
       <td class="num">{{ l.comprado|floatformat:2|intcomma }}</td>
       <td class="num {% if l.saldo < 0 %}estouro{% endif %}">{{ l.saldo|floatformat:2|intcomma }}</td>
       <td class="num {% if l.saldo < 0 %}estouro{% endif %}">{% if l.percentual is not None %}{{ l.percentual|floatformat:1 }}%{% else %}&mdash;{% endif %}</td>
+      <td class="num">{{ l.pago|floatformat:2|intcomma }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="6">Nenhuma etapa cadastrada.</td></tr>
+    <tr><td colspan="7">Nenhuma etapa cadastrada.</td></tr>
     {% endfor %}
   </tbody>
   <tfoot>
@@ -54,6 +55,7 @@
       <td class="num">{{ total_comprado|floatformat:2|intcomma }}</td>
       <td class="num {% if total_saldo < 0 %}estouro{% endif %}">{{ total_saldo|floatformat:2|intcomma }}</td>
       <td class="num">{% if total_percentual is not None %}{{ total_percentual|floatformat:1 }}%{% else %}&mdash;{% endif %}</td>
+      <td class="num">{{ total_pago|floatformat:2|intcomma }}</td>
     </tr>
   </tfoot>
 </table>

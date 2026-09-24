@@ -7,6 +7,7 @@ from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from financeiro.services import pago_por_etapa
 from orcamento.models import Orcamento, arredondar
 
 from . import services
@@ -119,13 +120,15 @@ def orcado_comprado(request, pk):
         .values_list("etapa_id")
         .annotate(total=Sum(F("quantidade") * F("preco_unitario")))
     )
+    pago = pago_por_etapa(orcamento)
     linhas = []
-    for etapa, nivel, orcado, comprado in orcamento.arvore(por_etapa):
+    for etapa, nivel, orcado, comprado, pago_etapa in orcamento.arvore(por_etapa, pago):
         linhas.append({
             "etapa": etapa,
             "nivel": nivel,
             "orcado": orcado,
             "comprado": comprado,
+            "pago": pago_etapa,
             "saldo": orcado - comprado,
             "percentual": (comprado / orcado * 100) if orcado else None,
         })
@@ -137,6 +140,7 @@ def orcado_comprado(request, pk):
     )
     total_orcado = orcamento.custo_direto
     total_comprado = arredondar(sum(por_etapa.values(), Decimal("0")))
+    total_pago = arredondar(sum(pago.values(), Decimal("0")))
     contexto = {
         **admin.site.each_context(request),
         "orcamento": orcamento,
@@ -144,6 +148,7 @@ def orcado_comprado(request, pk):
         "sem_etapa": sem_etapa,
         "total_orcado": total_orcado,
         "total_comprado": total_comprado,
+        "total_pago": total_pago,
         "total_saldo": total_orcado - total_comprado,
         "total_percentual": (total_comprado / total_orcado * 100) if total_orcado else None,
     }

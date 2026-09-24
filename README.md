@@ -11,11 +11,11 @@ no desenvolvimento.
 
 | Módulo | Situação | Conteúdo |
 |---|---|---|
-| Cadastros | ✅ pronto | Empresas, fornecedores, unidades de medida, insumos, composições de custo |
+| Cadastros | ✅ pronto | Empresas, fornecedores, clientes, unidades de medida, insumos, composições de custo |
 | Obras | ✅ pronto | Cadastro de obras por empresa, com status e datas |
 | Orçamento | ✅ pronto | Orçamento por obra com versões, EAP hierárquica, BDI e tela de EAP |
 | Suprimentos | ✅ pronto | Solicitação, cotação com mapa, pedido de compra, recebimento e relatório orçado × comprado |
-| Financeiro | ⏳ próximo | Contas a pagar/receber, centros de custo, fluxo de caixa |
+| Financeiro | ✅ pronto | Contas a pagar e a receber, baixas, contas bancárias, plano financeiro, apropriação por etapa, fluxo de caixa |
 | Contratos e medições | ⏳ | Contratos com empreiteiros, medições, retenções |
 | Comercial | ⏳ | Espelho de vendas, contratos de venda, recebíveis |
 
@@ -59,6 +59,29 @@ solicitação e podem ser cotados de novo.
 O relatório **Orçado × comprado** (link na tela da EAP) compara, por etapa, o
 custo orçado com o valor dos pedidos aprovados.
 
+## Financeiro
+
+- **Títulos a pagar e a receber**, divididos em **parcelas**. Cada parcela é
+  quitada por uma ou mais **baixas** (pagamento/recebimento), com juros,
+  multa e desconto, sempre em uma **conta bancária** da mesma empresa.
+- **Integração com Suprimentos**: ao registrar um recebimento, o título a
+  pagar é gerado sozinho. As parcelas seguem a condição de pagamento do
+  pedido ("30/60/90 dias" = 3 parcelas a partir da data do recebimento) e o
+  título já sai **apropriado por etapa** conforme os itens da nota. Depois
+  disso o recebimento não pode mais ser alterado.
+- **Parcelas e baixas**: a tela do dia a dia. Filtros por situação (vencidas,
+  vencem em 7 dias, em aberto, quitadas), por obra e por vencimento. Selecione
+  várias e use *"Baixar parcelas selecionadas"* para quitar tudo de uma vez,
+  ou abra uma parcela para lançar baixa parcial ou com juros. Para estornar,
+  exclua a baixa.
+- Depois da primeira baixa, as parcelas do título ficam travadas.
+- **Fluxo de caixa**: por dia, semana ou mês, com o realizado (baixas), o
+  previsto (parcelas em aberto), os vencidos em aberto e o saldo acumulado a
+  partir do saldo bancário. Filtra por empresa e por obra.
+- O relatório **Orçado × comprado** ganhou a coluna **pago**.
+
+Os relatórios ficam no topo do painel inicial.
+
 ## Como rodar localmente
 
 Pré-requisito: Python 3.11 ou mais novo.
@@ -69,7 +92,7 @@ source .venv/bin/activate          # no Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 python manage.py migrate           # cria o banco
-python manage.py carregar_exemplo  # opcional: obra, orçamento e um ciclo de compras de exemplo
+python manage.py carregar_exemplo  # opcional: obra, orçamento, compras e financeiro de exemplo
 python manage.py createsuperuser   # cria seu usuário de acesso
 python manage.py runserver
 ```
@@ -96,9 +119,12 @@ python manage.py test
 
 ```
 config/      configurações do projeto e rotas principais
-cadastros/   empresas, fornecedores, unidades, insumos, composições
+cadastros/   empresas, fornecedores, clientes, unidades, insumos, composições
 obras/       obras
 orcamento/   orçamentos, EAP, itens e a tela de EAP
 suprimentos/ solicitações, cotações, pedidos, recebimentos
              (regras de negócio em suprimentos/services.py)
+financeiro/  títulos, parcelas, baixas, contas bancárias, fluxo de caixa
+             (regras de negócio em financeiro/services.py)
+templates/   ajustes nas telas do painel (relatórios na página inicial)
 ```

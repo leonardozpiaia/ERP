@@ -5,6 +5,8 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
 
+from financeiro.services import gerar_titulo_do_recebimento
+
 from . import services
 from .models import (
     Cotacao,
@@ -246,6 +248,16 @@ class ItemRecebimentoInline(admin.TabularInline):
     formset = ItensRecebidosFormSet
     extra = 0
 
+    # Depois de salvo, o recebimento já gerou o título a pagar e não muda mais.
+    def has_add_permission(self, request, obj=None):
+        return obj is None and super().has_add_permission(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        return obj is None and super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return obj is None and super().has_delete_permission(request, obj)
+
     def pedido_em_uso(self, request, obj):
         if obj is not None:
             return obj.pedido_id
@@ -323,6 +335,13 @@ class RecebimentoAdmin(admin.ModelAdmin):
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         services.atualizar_status_pedido(form.instance.pedido)
+        if not change:
+            titulo = gerar_titulo_do_recebimento(form.instance)
+            url = reverse("admin:financeiro_titulopagar_change", args=[titulo.pk])
+            self.message_user(
+                request,
+                format_html('Título a pagar gerado: <a href="{}">{}</a>', url, titulo),
+            )
 
     def delete_model(self, request, obj):
         pedido = obj.pedido

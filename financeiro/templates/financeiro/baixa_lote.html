@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Baixar parcelas | {{ site_title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Início</a> &rsaquo;
+  <a href="{{ voltar }}">{% if pagar %}Contas a pagar{% else %}Contas a receber{% endif %}</a> &rsaquo;
+  Baixar parcelas
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{% if pagar %}Pagar{% else %}Receber{% endif %} {{ parcelas|length }} parcela(s)</h1>
+<table>
+  <thead><tr><th>Vencimento</th><th>Título</th><th style="text-align:right">Saldo a baixar</th></tr></thead>
+  <tbody>
+  {% for p in parcelas %}
+    <tr><td>{{ p.vencimento|date:"d/m/Y" }}</td><td>{{ p }}</td><td style="text-align:right">{{ p.saldo_aberto|floatformat:"2g" }}</td></tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><td colspan="2"><strong>Total</strong></td><td style="text-align:right"><strong>{{ total|floatformat:"2g" }}</strong></td></tr></tfoot>
+</table>
+<p>Cada parcela será quitada pelo saldo total, sem juros ou desconto. Para pagamentos parciais ou com juros, abra a parcela e lance a baixa nela.</p>
+<form method="post">
+  {% csrf_token %}
+  <fieldset class="module aligned">
+    {% for campo in form %}
+    <div class="form-row">
+      {{ campo.errors }}
+      <div class="flex-container">{{ campo.label_tag }} {{ campo }}</div>
+    </div>
+    {% endfor %}
+  </fieldset>
+  <div class="submit-row">
+    <input type="submit" class="default" value="Confirmar baixa">
+    <a href="{{ voltar }}" class="closelink">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

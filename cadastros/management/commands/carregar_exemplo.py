@@ -4,7 +4,17 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from cadastros.models import Composicao, ComposicaoItem, Empresa, Fornecedor, Insumo, UnidadeMedida
+from cadastros.models import (
+    Cliente,
+    Composicao,
+    ComposicaoItem,
+    Empresa,
+    Fornecedor,
+    Insumo,
+    UnidadeMedida,
+)
+from financeiro import services as financeiro
+from financeiro.models import CategoriaFinanceira, ContaBancaria, Parcela, Titulo
 from obras.models import Obra
 from orcamento.models import Etapa, ItemOrcamento, Orcamento
 from suprimentos import services
@@ -18,6 +28,7 @@ from suprimentos.models import (
 )
 
 CNPJ_EXEMPLO = "11.111.111/0001-11"
+CONTA_EXEMPLO = "Banco Exemplo - conta movimento"
 
 
 class Command(BaseCommand):
@@ -33,6 +44,10 @@ class Command(BaseCommand):
             self.stdout.write("Compras de exemplo já carregadas.")
         else:
             self.carregar_suprimentos()
+        if ContaBancaria.objects.filter(descricao=CONTA_EXEMPLO).exists():
+            self.stdout.write("Financeiro de exemplo já carregado.")
+        else:
+            self.carregar_financeiro()
 
     def carregar_orcamento(self):
         un = {
@@ -157,4 +172,64 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"Compras de exemplo: {sc}, {cotacao} e {len(pedidos)} pedido(s) aprovados."
+        ))
+
+    def carregar_financeiro(self):
+        hoje = datetime.date.today()
+        obra = Obra.objects.get(codigo="OB-001")
+        empresa = obra.empresa
+        conta = ContaBancaria.objects.create(
+            empresa=empresa, descricao=CONTA_EXEMPLO, banco="Banco Exemplo", agencia="0001",
+            numero="12345-6", saldo_inicial=Decimal("150000"),
+            data_saldo_inicial=hoje - datetime.timedelta(days=60),
+        )
+        cat = {}
+        for codigo, desc, tipo in [
+            ("1.01", "Venda de unidades", CategoriaFinanceira.Tipo.RECEITA),
+            ("2.01", "Materiais de construção", CategoriaFinanceira.Tipo.DESPESA),
+            ("2.02", "Mão de obra terceirizada", CategoriaFinanceira.Tipo.DESPESA),
+            ("3.01", "Despesas administrativas", CategoriaFinanceira.Tipo.DESPESA),
+        ]:
+            cat[codigo] = CategoriaFinanceira.objects.create(codigo=codigo, descricao=desc, tipo=tipo)
+
+        # Nota do aço recebida em Suprimentos vira conta a pagar.
+        for recebimento in Recebimento.objects.filter(titulo__isnull=True):
+            titulo = financeiro.gerar_titulo_do_recebimento(recebimento)
+            titulo.categoria = cat["2.01"]
+            titulo.save(update_fields=["categoria"])
+            financeiro.baixar(titulo.parcelas.first(), conta)
+
+        # Aluguel do escritório: despesa administrativa, sem obra, com uma parcela vencida.
+        aluguel = Titulo.objects.create(
+            tipo=Titulo.Tipo.PAGAR, empresa=empresa, fornecedor=Fornecedor.objects.create(
+                razao_social="Imobiliária Centro Ltda", cpf_cnpj="44.444.444/0001-44"
+            ),
+            categoria=cat["3.01"], documento="Contrato 77", descricao="Aluguel do escritório",
+            data_emissao=hoje - datetime.timedelta(days=40),
+        )
+        for n in range(4):
+            Parcela.objects.create(
+                titulo=aluguel, numero=n + 1, valor=Decimal("4500"),
+                vencimento=hoje - datetime.timedelta(days=10) + datetime.timedelta(days=30 * n),
+            )
+
+        # Venda de uma unidade: entrada paga + 12 parcelas mensais.
+        cliente = Cliente.objects.create(nome="Maria Exemplo", cpf_cnpj="000.000.000-00", cidade="Porto Alegre", uf="RS")
+        venda = Titulo.objects.create(
+            tipo=Titulo.Tipo.RECEBER, empresa=empresa, obra=obra, cliente=cliente,
+            categoria=cat["1.01"], documento="Contrato de venda 101",
+            descricao="Apto 101 - Residencial Exemplo", data_emissao=hoje - datetime.timedelta(days=20),
+        )
+        entrada = Parcela.objects.create(
+            titulo=venda, numero=1, valor=Decimal("60000"), vencimento=hoje - datetime.timedelta(days=20)
+        )
+        for n in range(1, 13):
+            Parcela.objects.create(
+                titulo=venda, numero=n + 1, valor=Decimal("8500"),
+                vencimento=hoje + datetime.timedelta(days=30 * n - 20),
+            )
+        financeiro.baixar(entrada, conta, data=hoje - datetime.timedelta(days=20))
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Financeiro de exemplo: saldo em conta R$ {conta.saldo_atual}."
         ))
