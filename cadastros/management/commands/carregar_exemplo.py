@@ -15,6 +15,8 @@ from cadastros.models import (
 )
 from comercial import services as comercial
 from comercial.models import ContratoVenda, IndiceEconomico, SerieParcelas, Unidade, somar_meses
+from contratos import services as contratos
+from contratos.models import ContratoServico, ItemContrato, ItemMedicao, Medicao
 from financeiro import services as financeiro
 from financeiro.models import CategoriaFinanceira, ContaBancaria, Parcela, Titulo
 from obras.models import Obra
@@ -54,6 +56,10 @@ class Command(BaseCommand):
             self.stdout.write("Comercial de exemplo já carregado.")
         else:
             self.carregar_comercial()
+        if ContratoServico.objects.filter(obra__codigo="OB-001").exists():
+            self.stdout.write("Contratos de exemplo já carregados.")
+        else:
+            self.carregar_contratos()
 
     def carregar_orcamento(self):
         un = {
@@ -292,4 +298,54 @@ class Command(BaseCommand):
         ])
         self.stdout.write(self.style.SUCCESS(
             f"Comercial de exemplo: {len(unidades)} unidades, 3 contratos, {meses} reajuste(s) INCC aplicados."
+        ))
+
+    def carregar_contratos(self):
+        hoje = datetime.date.today()
+        obra = Obra.objects.get(codigo="OB-001")
+        orc = obra.orcamentos.first()
+        conta = ContaBancaria.objects.get(descricao=CONTA_EXEMPLO)
+        m2 = UnidadeMedida.objects.get(sigla="m2")
+        empreiteiro = Fornecedor.objects.create(
+            razao_social="Empreiteira Paredes Firmes Ltda", nome_fantasia="Paredes Firmes",
+            cpf_cnpj="55.555.555/0001-55", cidade="Porto Alegre", uf="RS",
+        )
+        contrato = ContratoServico.objects.create(
+            obra=obra, fornecedor=empreiteiro, objeto="Mão de obra de alvenaria e reboco - Torre A",
+            data=hoje - datetime.timedelta(days=75), retencao_caucao=Decimal("5"),
+            retencao_inss=Decimal("11"), retencao_iss=Decimal("2"), prazo_pagamento_dias=10,
+            categoria=CategoriaFinanceira.objects.get(codigo="2.02"),
+        )
+        alvenaria = orc.etapas.get(codigo="03")
+        itens = [
+            ItemContrato.objects.create(
+                contrato=contrato, descricao="Assentamento de alvenaria de vedação", unidade=m2,
+                quantidade=Decimal("1850"), preco_unitario=Decimal("28"), etapa=alvenaria,
+            ),
+            ItemContrato.objects.create(
+                contrato=contrato, descricao="Chapisco e reboco interno", unidade=m2,
+                quantidade=Decimal("3200"), preco_unitario=Decimal("22"), etapa=alvenaria,
+            ),
+        ]
+        contratos.ativar(contrato)
+
+        def medir(inicio, fim, quantidades, aprovar=True):
+            medicao = Medicao.objects.create(
+                contrato=contrato, data=fim, periodo_inicio=inicio, periodo_fim=fim,
+            )
+            for item, qtd in zip(itens, quantidades):
+                if Decimal(qtd) > 0:
+                    ItemMedicao.objects.create(medicao=medicao, item_contrato=item, quantidade=Decimal(qtd))
+            if aprovar:
+                contratos.aprovar_medicao(medicao)
+            return medicao
+
+        d = hoje - datetime.timedelta(days=60)
+        m1 = medir(d, d + datetime.timedelta(days=29), ["600", "0"])
+        financeiro.baixar(m1.titulo.parcelas.get(), conta, data=m1.titulo.parcelas.get().vencimento)
+        medir(d + datetime.timedelta(days=30), d + datetime.timedelta(days=59), ["550", "900"])
+        medir(hoje, hoje, ["200", "400"], aprovar=False)
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Contratos de exemplo: {contrato}, 3 medições ({contrato.percentual_executado:.1f}% executado)."
         ))

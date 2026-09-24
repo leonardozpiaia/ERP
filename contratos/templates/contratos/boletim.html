@@ -1,0 +1,94 @@
+{% load humanize %}<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boletim de medição {{ medicao.numero }} - CT {{ contrato.pk }}</title>
+<style>
+  :root { --borda: #999; --fundo: #f0f0f0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; background: #fff; margin: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .cabecalho { display: flex; justify-content: space-between; gap: 16px; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 12px; }
+  .dados { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 24px; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  th, td { border: 1px solid var(--borda); padding: 4px 6px; }
+  th { background: var(--fundo); font-size: 11px; }
+  td.n { text-align: right; white-space: nowrap; }
+  .atual { background: #fff8d6; }
+  .totais { width: 50%; margin-left: auto; }
+  .totais td:first-child { font-weight: bold; }
+  .assinaturas { display: flex; gap: 48px; margin-top: 56px; }
+  .assinaturas div { flex: 1; border-top: 1px solid #111; text-align: center; padding-top: 4px; }
+  .acoes { margin-bottom: 16px; }
+  @media print { .acoes { display: none; } body { margin: 0; } .atual { background: none; } }
+</style>
+</head>
+<body>
+<div class="acoes"><button onclick="window.print()">Imprimir</button> <a href="{% url 'admin:contratos_medicao_change' medicao.pk %}">Voltar</a></div>
+
+<div class="cabecalho">
+  <div>
+    <h1>Boletim de medição nº {{ medicao.numero }}</h1>
+    <div>{{ contrato.obra.empresa.razao_social }}</div>
+  </div>
+  <div style="text-align:right">
+    <div>Data: {{ medicao.data|date:"d/m/Y" }}</div>
+    <div>Período: {{ medicao.periodo_inicio|date:"d/m/Y" }} a {{ medicao.periodo_fim|date:"d/m/Y" }}</div>
+    <div>Situação: {{ medicao.get_status_display }}</div>
+  </div>
+</div>
+
+<div class="dados">
+  <div><strong>Obra:</strong> {{ contrato.obra }}</div>
+  <div><strong>Contrato:</strong> CT {{ contrato.pk }} de {{ contrato.data|date:"d/m/Y" }}</div>
+  <div><strong>Empreiteiro:</strong> {{ contrato.fornecedor.razao_social }} ({{ contrato.fornecedor.cpf_cnpj }})</div>
+  <div><strong>Objeto:</strong> {{ contrato.objeto }}</div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">Serviço</th><th rowspan="2">Un.</th><th rowspan="2">Preço unit.</th>
+      <th colspan="5">Quantidades</th><th colspan="2">Valores</th><th rowspan="2">% exec.</th>
+    </tr>
+    <tr>
+      <th>Contratado</th><th>Anterior</th><th class="atual">Nesta medição</th><th>Acumulado</th><th>Saldo</th>
+      <th class="atual">Nesta medição</th><th>Acumulado</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for l in linhas %}
+    <tr>
+      <td>{{ l.item.descricao }}{% if l.item.etapa %} <small>({{ l.item.etapa.codigo }})</small>{% endif %}</td>
+      <td>{{ l.item.unidade }}</td>
+      <td class="n">{{ l.item.preco_unitario|floatformat:"2g" }}</td>
+      <td class="n">{{ l.item.quantidade|floatformat:"-4g" }}</td>
+      <td class="n">{{ l.anterior|floatformat:"-4g" }}</td>
+      <td class="n atual">{{ l.atual|floatformat:"-4g" }}</td>
+      <td class="n">{{ l.acumulado|floatformat:"-4g" }}</td>
+      <td class="n">{{ l.saldo|floatformat:"-4g" }}</td>
+      <td class="n atual">{{ l.valor_atual|floatformat:"2g" }}</td>
+      <td class="n">{{ l.valor_acumulado|floatformat:"2g" }}</td>
+      <td class="n">{{ l.percentual|floatformat:1 }}%</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<table class="totais">
+  <tr><td>Valor do contrato</td><td class="n">{{ total_contrato|floatformat:"2g" }}</td></tr>
+  <tr><td>Acumulado medido ({{ percentual|floatformat:1 }}%)</td><td class="n">{{ total_acumulado|floatformat:"2g" }}</td></tr>
+  <tr><td>Valor bruto desta medição</td><td class="n">{{ medicao.valor_bruto|floatformat:"2g" }}</td></tr>
+  <tr><td>(-) Caução ({{ contrato.retencao_caucao|floatformat:2 }}%)</td><td class="n">{{ medicao.valor_caucao|floatformat:"2g" }}</td></tr>
+  <tr><td>(-) INSS retido ({{ contrato.retencao_inss|floatformat:2 }}%)</td><td class="n">{{ medicao.valor_inss|floatformat:"2g" }}</td></tr>
+  <tr><td>(-) ISS retido ({{ contrato.retencao_iss|floatformat:2 }}%)</td><td class="n">{{ medicao.valor_iss|floatformat:"2g" }}</td></tr>
+  <tr><td>Valor líquido a pagar</td><td class="n"><strong>{{ medicao.valor_liquido|floatformat:"2g" }}</strong></td></tr>
+</table>
+{% if medicao.observacao %}<p><strong>Observações:</strong> {{ medicao.observacao|linebreaksbr }}</p>{% endif %}
+
+<div class="assinaturas">
+  <div>Engenheiro(a) responsável</div>
+  <div>{{ contrato.fornecedor.razao_social }}</div>
+</div>
+</body>
+</html>

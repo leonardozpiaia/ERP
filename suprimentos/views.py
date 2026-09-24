@@ -7,6 +7,7 @@ from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from contratos.services import medido_por_etapa, medido_sem_etapa
 from financeiro.services import pago_por_etapa
 from orcamento.models import Orcamento, arredondar
 
@@ -112,6 +113,7 @@ def mapa_cotacao(request, pk):
 
 @staff_member_required
 def orcado_comprado(request, pk):
+    """Orçado x realizado por etapa: compras (pedidos), medições de empreiteiros e pago."""
     orcamento = get_object_or_404(Orcamento.objects.select_related("obra"), pk=pk)
     comprados = ItemPedido.objects.filter(pedido__status__in=STATUS_COMPRADO)
 
@@ -120,26 +122,37 @@ def orcado_comprado(request, pk):
         .values_list("etapa_id")
         .annotate(total=Sum(F("quantidade") * F("preco_unitario")))
     )
+    medido = medido_por_etapa(orcamento)
     pago = pago_por_etapa(orcamento)
     linhas = []
-    for etapa, nivel, orcado, comprado, pago_etapa in orcamento.arvore(por_etapa, pago):
+    arvore = orcamento.arvore(por_etapa, medido, pago)
+    for etapa, nivel, orcado, comprado, medido_etapa, pago_etapa in arvore:
+        realizado = comprado + medido_etapa
         linhas.append({
             "etapa": etapa,
             "nivel": nivel,
             "orcado": orcado,
             "comprado": comprado,
+            "medido": medido_etapa,
+            "realizado": realizado,
             "pago": pago_etapa,
-            "saldo": orcado - comprado,
-            "percentual": (comprado / orcado * 100) if orcado else None,
+            "saldo": orcado - realizado,
+            "percentual": (realizado / orcado * 100) if orcado else None,
         })
 
     sem_etapa = arredondar(
-        comprados.filter(pedido__obra=orcamento.obra, etapa__isnull=True).aggregate(
-            total=Sum(F("quantidade") * F("preco_unitario"))
-        )["total"]
+        (
+            comprados.filter(pedido__obra=orcamento.obra, etapa__isnull=True).aggregate(
+                total=Sum(F("quantidade") * F("preco_unitario"))
+            )["total"]
+            or Decimal("0")
+        )
+        + medido_sem_etapa(orcamento.obra)
     )
     total_orcado = orcamento.custo_direto
     total_comprado = arredondar(sum(por_etapa.values(), Decimal("0")))
+    total_medido = arredondar(sum(medido.values(), Decimal("0")))
+    total_realizado = total_comprado + total_medido
     total_pago = arredondar(sum(pago.values(), Decimal("0")))
     contexto = {
         **admin.site.each_context(request),
@@ -148,8 +161,10 @@ def orcado_comprado(request, pk):
         "sem_etapa": sem_etapa,
         "total_orcado": total_orcado,
         "total_comprado": total_comprado,
+        "total_medido": total_medido,
+        "total_realizado": total_realizado,
         "total_pago": total_pago,
-        "total_saldo": total_orcado - total_comprado,
-        "total_percentual": (total_comprado / total_orcado * 100) if total_orcado else None,
+        "total_saldo": total_orcado - total_realizado,
+        "total_percentual": (total_realizado / total_orcado * 100) if total_orcado else None,
     }
     return render(request, "suprimentos/orcado_comprado.html", contexto)

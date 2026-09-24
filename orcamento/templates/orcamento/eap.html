@@ -24,7 +24,7 @@
 {% block content %}
 <h1>{{ orcamento.obra }} &mdash; {{ orcamento.descricao }} (v{{ orcamento.versao }})</h1>
 <p>Data-base: {{ orcamento.data_base|date:"d/m/Y" }} &middot; Status: {{ orcamento.get_status_display }}
-  &middot; <a href="{% url 'suprimentos:orcado_comprado' orcamento.pk %}">Orçado × comprado</a></p>
+  &middot; <a href="{% url 'suprimentos:orcado_comprado' orcamento.pk %}">Orçado × realizado</a></p>
 
 <table class="eap">
   <thead>

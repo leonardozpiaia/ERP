@@ -1,0 +1,59 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+<style>
+  form.filtros { display: flex; flex-wrap: wrap; gap: 1em; align-items: end; margin-bottom: 1.5em; }
+  form.filtros label { display: block; font-weight: bold; margin-bottom: .2em; }
+  table.ret { width: 100%; }
+  table.ret td.n, table.ret th.n { text-align: right; white-space: nowrap; }
+  table.ret tfoot td { font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Início</a> &rsaquo; Retenções de medições</div>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="filtros">
+  {% for campo in form %}
+  <div>{{ campo.label_tag }}{% if campo.name == "obra" %}{{ campo }}{% else %}<input type="date" name="{{ campo.name }}" value="{{ campo.value|date:'Y-m-d'|default:campo.value }}">{% endif %}</div>
+  {% endfor %}
+  <div><input type="submit" value="Atualizar"></div>
+</form>
+{{ form.errors }}
+<p>Medições aprovadas no período. O INSS e o ISS retidos devem ser recolhidos pela construtora; a caução é devolvida ao empreiteiro no encerramento do contrato.</p>
+<table class="ret">
+  <thead><tr>
+    <th>Data</th><th>Medição</th><th>Empreiteiro</th><th>Obra</th>
+    <th class="n">Bruto</th><th class="n">INSS</th><th class="n">ISS</th><th class="n">Caução</th><th class="n">Líquido</th>
+  </tr></thead>
+  <tbody>
+  {% for l in linhas %}
+    <tr>
+      <td>{{ l.medicao.data|date:"d/m/Y" }}</td>
+      <td><a href="{% url 'admin:contratos_medicao_change' l.medicao.pk %}">{{ l.medicao }}</a></td>
+      <td>{{ l.medicao.contrato.fornecedor }}</td>
+      <td>{{ l.medicao.contrato.obra.codigo }}</td>
+      <td class="n">{{ l.bruto|floatformat:"2g" }}</td>
+      <td class="n">{{ l.inss|floatformat:"2g" }}</td>
+      <td class="n">{{ l.iss|floatformat:"2g" }}</td>
+      <td class="n">{{ l.caucao|floatformat:"2g" }}</td>
+      <td class="n">{{ l.liquido|floatformat:"2g" }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="9">Nenhuma medição aprovada no período.</td></tr>
+  {% endfor %}
+  </tbody>
+  {% if linhas %}
+  <tfoot><tr>
+    <td colspan="4">Total</td>
+    <td class="n">{{ totais.bruto|floatformat:"2g" }}</td>
+    <td class="n">{{ totais.inss|floatformat:"2g" }}</td>
+    <td class="n">{{ totais.iss|floatformat:"2g" }}</td>
+    <td class="n">{{ totais.caucao|floatformat:"2g" }}</td>
+    <td class="n">{{ totais.liquido|floatformat:"2g" }}</td>
+  </tr></tfoot>
+  {% endif %}
+</table>
+{% endblock %}

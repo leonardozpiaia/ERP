@@ -16,7 +16,7 @@ no desenvolvimento.
 | Orçamento | ✅ pronto | Orçamento por obra com versões, EAP hierárquica, BDI e tela de EAP |
 | Suprimentos | ✅ pronto | Solicitação, cotação com mapa, pedido de compra, recebimento e relatório orçado × comprado |
 | Financeiro | ✅ pronto | Contas a pagar e a receber, baixas, contas bancárias, plano financeiro, apropriação por etapa, fluxo de caixa |
-| Contratos e medições | ⏳ | Contratos com empreiteiros, medições, retenções |
+| Contratos e medições | ✅ pronto | Contratos de empreitada, medições, boletim, retenções (caução/INSS/ISS), encerramento |
 | Comercial | ✅ pronto | Unidades, espelho de vendas, contratos com séries de parcelas, reajuste por índice, distrato |
 
 ## Conceitos do orçamento
@@ -56,8 +56,8 @@ Solicitação ──aprovar──▶ Cotação ──mapa de cotação──▶ 
 Itens que ficaram sem preço, ou pedidos cancelados, voltam como saldo na
 solicitação e podem ser cotados de novo.
 
-O relatório **Orçado × comprado** (link na tela da EAP) compara, por etapa, o
-custo orçado com o valor dos pedidos aprovados.
+O relatório **Orçado × realizado** (link na tela da EAP) compara, por etapa, o
+custo orçado com o valor dos pedidos aprovados e das medições de empreiteiros.
 
 ## Financeiro
 
@@ -106,6 +106,30 @@ Os relatórios ficam no topo do painel inicial.
   valor recebido. A devolução ao cliente, se houver, é lançada em contas a
   pagar.
 
+## Contratos e medições (empreiteiros)
+
+- **Contrato de empreitada**: obra, empreiteiro, objeto, itens de serviço
+  (quantidade, unidade, preço e etapa do orçamento), prazo de pagamento e
+  retenções em %: **caução** (retenção técnica), **INSS** e **ISS**.
+  *"Ativar"* libera o contrato para medições. Com o contrato ativo é possível
+  fazer aditivos: incluir itens ou aumentar quantidades (nunca abaixo do já
+  medido).
+- **Medição**: no contrato, *"Nova medição"* já lista os serviços com saldo;
+  basta digitar o executado no período. Não é possível medir além do
+  contratado: medições em elaboração também reservam saldo.
+- **Aprovar** a medição gera o título a pagar ao empreiteiro pelo **valor
+  líquido** (bruto - caução - INSS - ISS), com vencimento pelo prazo do
+  contrato e apropriação por etapa. *"Reabrir"* desfaz a aprovação enquanto
+  o título não tiver pagamentos.
+- **Boletim de medição** para imprimir e assinar: contratado, anterior,
+  nesta medição, acumulado, saldo e % executado por serviço, com as
+  retenções e o líquido.
+- **Encerrar** o contrato gera o título de **devolução da caução** retida.
+- **Retenções de medições**: relatório por período com o INSS e o ISS a
+  recolher e a caução retida.
+- O relatório da obra virou **Orçado × realizado**: comprado (pedidos) +
+  medido (empreiteiros), saldo, % realizado e pago, por etapa.
+
 ## Como rodar localmente
 
 Pré-requisito: Python 3.11 ou mais novo.
@@ -152,5 +176,7 @@ financeiro/  títulos, parcelas, baixas, contas bancárias, fluxo de caixa
              (regras de negócio em financeiro/services.py)
 comercial/   unidades, espelho de vendas, contratos, reajustes, distrato
              (regras de negócio em comercial/services.py)
+contratos/   contratos de empreitada, medições, boletim, retenções
+             (regras de negócio em contratos/services.py)
 templates/   ajustes nas telas do painel (relatórios na página inicial)
 ```
