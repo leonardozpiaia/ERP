@@ -1,6 +1,7 @@
 from django.contrib.auth.models import Group, User
 from django.core.management import call_command
-from django.test import TestCase
+from django.core.management.base import CommandError
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from config.perfis import PERFIS
@@ -67,3 +68,28 @@ class PerfisTests(TestCase):
         resp = self.client.get(reverse("financeiro:fluxo_caixa"))
         self.assertEqual(resp.status_code, 302)
         self.assertIn(reverse("admin:login"), resp["Location"])
+
+
+class PrepararDemoTests(TestCase):
+    # O Django roda os testes com DEBUG=False; o uso normal do comando é em modo de teste local.
+    @override_settings(DEBUG=True)
+    def test_prepara_usuario_perfis_e_exemplo(self):
+        call_command("preparar_demo", stdout=open("/dev/null", "w"))
+        call_command("preparar_demo", stdout=open("/dev/null", "w"))  # rodar de novo não duplica
+        self.assertEqual(User.objects.filter(is_superuser=True).count(), 1)
+        self.assertTrue(User.objects.get(username="admin").check_password("admin"))
+        self.assertEqual(Group.objects.count(), len(PERFIS))
+        from obras.models import Obra
+        self.assertTrue(Obra.objects.filter(codigo="OB-001").exists())
+
+    @override_settings(DEBUG=True)
+    def test_sem_exemplo(self):
+        call_command("preparar_demo", "--sem-exemplo", stdout=open("/dev/null", "w"))
+        from obras.models import Obra
+        self.assertFalse(Obra.objects.exists())
+
+    @override_settings(DEBUG=False)
+    def test_recusa_em_producao(self):
+        with self.assertRaises(CommandError):
+            call_command("preparar_demo", stdout=open("/dev/null", "w"))
+        self.assertFalse(User.objects.exists())

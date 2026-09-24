@@ -147,7 +147,29 @@ do banco. Ao iniciar, o sistema aplica as mudanças no banco e atualiza os
 Comercial), definidos em `config/perfis.py`. As telas de relatório também
 respeitam os perfis.
 
-## Como rodar localmente
+## Testar no seu computador (sem instalar nada além do Python)
+
+1. Instale o **Python 3.12 ou mais novo** em https://www.python.org/downloads/.
+   No Windows, marque **"Add python.exe to PATH"** na primeira tela do instalador.
+2. Baixe o projeto (no GitHub: botão **Code → Download ZIP**) e descompacte.
+3. Dê dois cliques em:
+   - **Windows:** `iniciar-windows.bat`
+   - **Mac:** `iniciar-mac-linux.command` (se o Mac bloquear, clique com o botão
+     direito → Abrir → Abrir)
+4. Na primeira vez leva alguns minutos. Depois o navegador abre sozinho em
+   http://127.0.0.1:8000. Entre com usuário **admin** e senha **admin**.
+
+O sistema já vem com os dados de exemplo (obra "Residencial Exemplo"). Para
+começar do zero, apague o arquivo `db.sqlite3` da pasta e rode o
+iniciador com a opção `limpo` (no Windows: `iniciar-windows.bat limpo` no
+Prompt de Comando). Enquanto a janela preta estiver aberta, o sistema está
+no ar; feche-a para encerrar. Os dados ficam salvos no `db.sqlite3` entre um
+uso e outro.
+
+> Isto é só para teste: o usuário `admin`/`admin` e o banco em arquivo não
+> são seguros para uso real. Para a equipe usar, veja [DEPLOY.md](DEPLOY.md).
+
+## Como rodar localmente (desenvolvedores)
 
 Pré-requisito: Python 3.11 ou mais novo.
 
