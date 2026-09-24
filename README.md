@@ -17,7 +17,7 @@ no desenvolvimento.
 | Suprimentos | ✅ pronto | Solicitação, cotação com mapa, pedido de compra, recebimento e relatório orçado × comprado |
 | Financeiro | ✅ pronto | Contas a pagar e a receber, baixas, contas bancárias, plano financeiro, apropriação por etapa, fluxo de caixa |
 | Contratos e medições | ⏳ | Contratos com empreiteiros, medições, retenções |
-| Comercial | ⏳ | Espelho de vendas, contratos de venda, recebíveis |
+| Comercial | ✅ pronto | Unidades, espelho de vendas, contratos com séries de parcelas, reajuste por índice, distrato |
 
 ## Conceitos do orçamento
 
@@ -82,6 +82,30 @@ custo orçado com o valor dos pedidos aprovados.
 
 Os relatórios ficam no topo do painel inicial.
 
+## Comercial (incorporação)
+
+- **Unidades** de cada empreendimento (a obra), com bloco, andar, área,
+  dormitórios, preço de tabela e situação: disponível, reservada, vendida ou
+  bloqueada.
+- **Espelho de vendas**: mapa das unidades por bloco e andar, colorido pela
+  situação, com total de unidades, % vendido, VGV, valor vendido e recebido.
+  Clicar numa unidade disponível já abre um contrato para ela.
+- **Contrato de venda**: cliente, valor, índice de reajuste (INCC, IGP-M,
+  IPCA ou nenhum) e a condição de pagamento em **séries de parcelas**
+  (ex.: 1 entrada + 36 mensais + 3 intermediárias anuais + chaves +
+  financiamento). A soma das séries precisa fechar com o valor do contrato.
+- **Efetivar** (ação na lista de contratos): gera as parcelas no contas a
+  receber e marca a unidade como vendida. Uma unidade só pode ter um contrato
+  vigente, e contrato efetivado não pode ser excluído.
+- **Reajuste**: cadastre a variação mensal dos índices e use *"Aplicar
+  reajustes pendentes"*. A variação de cada mês após a data-base corrige o
+  saldo em aberto das parcelas que vencem depois daquele mês. Cada mês é
+  aplicado uma única vez, com histórico do saldo antes e depois.
+- **Distrato** (com tela de confirmação): a unidade volta a ficar disponível,
+  as parcelas não pagas são excluídas e as pagas em parte ficam só com o
+  valor recebido. A devolução ao cliente, se houver, é lançada em contas a
+  pagar.
+
 ## Como rodar localmente
 
 Pré-requisito: Python 3.11 ou mais novo.
@@ -92,7 +116,7 @@ source .venv/bin/activate          # no Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 python manage.py migrate           # cria o banco
-python manage.py carregar_exemplo  # opcional: obra, orçamento, compras e financeiro de exemplo
+python manage.py carregar_exemplo  # opcional: dados de exemplo de todos os módulos
 python manage.py createsuperuser   # cria seu usuário de acesso
 python manage.py runserver
 ```
@@ -126,5 +150,7 @@ suprimentos/ solicitações, cotações, pedidos, recebimentos
              (regras de negócio em suprimentos/services.py)
 financeiro/  títulos, parcelas, baixas, contas bancárias, fluxo de caixa
              (regras de negócio em financeiro/services.py)
+comercial/   unidades, espelho de vendas, contratos, reajustes, distrato
+             (regras de negócio em comercial/services.py)
 templates/   ajustes nas telas do painel (relatórios na página inicial)
 ```

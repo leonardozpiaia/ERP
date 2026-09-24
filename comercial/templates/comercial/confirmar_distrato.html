@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+{% load humanize %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Início</a> &rsaquo;
+  <a href="{% url 'admin:comercial_contratovenda_changelist' %}">Contratos de venda</a> &rsaquo;
+  Confirmar distrato
+</div>
+{% endblock %}
+
+{% block content %}
+<p>Ao distratar:</p>
+<ul>
+  <li>a unidade volta a ficar <strong>disponível</strong>;</li>
+  <li>as parcelas ainda não pagas são <strong>excluídas</strong> do contas a receber, e as pagas em parte ficam só com o valor já recebido;</li>
+  <li>a devolução de valores ao cliente, se houver, deve ser lançada à parte em contas a pagar.</li>
+</ul>
+<table>
+  <thead><tr><th>Contrato</th><th>Situação</th><th style="text-align:right">Recebido</th><th style="text-align:right">Saldo que será cancelado</th></tr></thead>
+  <tbody>
+  {% for c in contratos %}
+    <tr><td>{{ c }}</td><td>{{ c.get_status_display }}</td>
+      <td style="text-align:right">{{ c.recebido|floatformat:"2g" }}</td>
+      <td style="text-align:right">{{ c.saldo|floatformat:"2g" }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<form method="post">
+  {% csrf_token %}
+  {% for c in contratos %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ c.pk }}">{% endfor %}
+  <input type="hidden" name="action" value="distratar">
+  <input type="hidden" name="confirmar" value="sim">
+  <div class="submit-row">
+    <input type="submit" class="default" value="Sim, distratar">
+    <a href="{% url 'admin:comercial_contratovenda_changelist' %}" class="closelink">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

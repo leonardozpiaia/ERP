@@ -1,0 +1,90 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+<style>
+  .espelho-topo { display: flex; flex-wrap: wrap; gap: 1em; align-items: center; margin-bottom: 1em; }
+  .cartoes { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0 1.5em; }
+  .cartao { border: 1px solid var(--hairline-color); border-radius: 6px; padding: 10px 14px; min-width: 150px; }
+  .cartao .rotulo { font-size: 11px; text-transform: uppercase; color: var(--body-quiet-color); }
+  .cartao .valor { font-size: 18px; font-weight: bold; margin-top: 4px; }
+  .bloco { margin-bottom: 2em; }
+  .andar { display: flex; gap: 6px; margin-bottom: 6px; align-items: stretch; }
+  .andar .num { width: 56px; flex: none; display: flex; align-items: center; justify-content: flex-end;
+                padding-right: 6px; color: var(--body-quiet-color); font-size: 12px; }
+  .un { display: block; width: 118px; padding: 6px 8px; border-radius: 5px; border: 1px solid transparent;
+        font-size: 12px; line-height: 1.35; color: #1b1b1b !important; text-decoration: none !important; }
+  .un:hover { border-color: #1b1b1b; }
+  .un strong { font-size: 14px; }
+  .DISP { background: #c9ecc9; } .RES { background: #fbe3a6; } .VEND { background: #f5b7b1; } .BLOQ { background: #d5d5d5; }
+  .legenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; }
+  .legenda span.cor { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
+  table.resumo td.num, table.resumo th.num { text-align: right; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Início</a> &rsaquo; Espelho de vendas</div>
+{% endblock %}
+
+{% block content %}
+{% if not obra %}
+<p>Nenhum empreendimento com unidades cadastradas.
+  <a href="{% url 'admin:comercial_unidade_add' %}">Cadastre as unidades</a> para ver o espelho.</p>
+{% else %}
+<form method="get" class="espelho-topo">
+  <label for="obra"><strong>Empreendimento:</strong></label>
+  <select name="obra" id="obra" onchange="this.form.submit()">
+    {% for o in obras %}<option value="{{ o.pk }}" {% if o == obra %}selected{% endif %}>{{ o }}</option>{% endfor %}
+  </select>
+  <noscript><input type="submit" value="Ver"></noscript>
+</form>
+
+<div class="cartoes">
+  <div class="cartao"><div class="rotulo">Unidades</div><div class="valor">{{ total_unidades }}</div></div>
+  <div class="cartao"><div class="rotulo">Vendidas</div><div class="valor">{{ percentual_vendido|floatformat:0 }}%</div></div>
+  <div class="cartao"><div class="rotulo">VGV (vendido + tabela)</div><div class="valor">R$ {{ vgv|floatformat:"2g" }}</div></div>
+  <div class="cartao"><div class="rotulo">Vendido</div><div class="valor">R$ {{ vendido|floatformat:"2g" }}</div></div>
+  <div class="cartao"><div class="rotulo">Recebido</div><div class="valor">R$ {{ recebido|floatformat:"2g" }}</div></div>
+</div>
+
+<div class="legenda">
+  <span><span class="cor DISP"></span>Disponível</span>
+  <span><span class="cor RES"></span>Reservada</span>
+  <span><span class="cor VEND"></span>Vendida</span>
+  <span><span class="cor BLOQ"></span>Bloqueada</span>
+  <span>&middot; Clique em uma unidade disponível para abrir um contrato, ou em uma vendida para ver o contrato.</span>
+</div>
+
+{% for bloco in grade %}
+<div class="bloco">
+  <h2>{% if bloco.nome %}{{ bloco.nome }}{% else %}Unidades{% endif %}</h2>
+  {% for linha in bloco.andares %}
+  <div class="andar">
+    <div class="num">{% if linha.andar is not None %}{{ linha.andar }}º{% endif %}</div>
+    {% for u in linha.unidades %}
+      <a class="un {{ u.status }}"
+         href="{% if u.contrato %}{% url 'admin:comercial_contratovenda_change' u.contrato.pk %}{% elif u.status == 'DISP' or u.status == 'RES' %}{% url 'admin:comercial_contratovenda_add' %}?unidade={{ u.pk }}{% else %}{% url 'admin:comercial_unidade_change' u.pk %}{% endif %}"
+         title="{{ u.get_tipo_display }}{% if u.area_privativa %} - {{ u.area_privativa }} m²{% endif %}{% if u.quartos %} - {{ u.quartos }} dorm.{% endif %}">
+        <strong>{{ u.identificador }}</strong><br>
+        {% if u.contrato %}{{ u.contrato.cliente|truncatechars:16 }}<br>R$ {{ u.contrato.valor_total|floatformat:"0g" }}
+        {% else %}{{ u.get_status_display }}<br>R$ {{ u.preco_tabela|floatformat:"0g" }}{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<h2>Resumo por situação</h2>
+<table class="resumo">
+  <thead><tr><th>Situação</th><th class="num">Unidades</th><th class="num">Valor</th></tr></thead>
+  <tbody>
+  {% for status, linha in por_status %}
+    <tr><td><span class="cor {{ status }}" style="display:inline-block;width:12px;height:12px;border-radius:3px"></span> {{ linha.rotulo }}</td>
+      <td class="num">{{ linha.qtd }}</td><td class="num">{{ linha.valor|floatformat:"2g" }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p style="font-size:12px">Unidades vendidas pelo valor do contrato; as demais pelo preço de tabela.</p>
+{% endif %}
+{% endblock %}

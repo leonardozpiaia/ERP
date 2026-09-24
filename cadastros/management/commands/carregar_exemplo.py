@@ -13,6 +13,8 @@ from cadastros.models import (
     Insumo,
     UnidadeMedida,
 )
+from comercial import services as comercial
+from comercial.models import ContratoVenda, IndiceEconomico, SerieParcelas, Unidade, somar_meses
 from financeiro import services as financeiro
 from financeiro.models import CategoriaFinanceira, ContaBancaria, Parcela, Titulo
 from obras.models import Obra
@@ -48,6 +50,10 @@ class Command(BaseCommand):
             self.stdout.write("Financeiro de exemplo já carregado.")
         else:
             self.carregar_financeiro()
+        if Unidade.objects.filter(obra__codigo="OB-001").exists():
+            self.stdout.write("Comercial de exemplo já carregado.")
+        else:
+            self.carregar_comercial()
 
     def carregar_orcamento(self):
         un = {
@@ -213,23 +219,77 @@ class Command(BaseCommand):
                 vencimento=hoje - datetime.timedelta(days=10) + datetime.timedelta(days=30 * n),
             )
 
-        # Venda de uma unidade: entrada paga + 12 parcelas mensais.
-        cliente = Cliente.objects.create(nome="Maria Exemplo", cpf_cnpj="000.000.000-00", cidade="Porto Alegre", uf="RS")
-        venda = Titulo.objects.create(
-            tipo=Titulo.Tipo.RECEBER, empresa=empresa, obra=obra, cliente=cliente,
-            categoria=cat["1.01"], documento="Contrato de venda 101",
-            descricao="Apto 101 - Residencial Exemplo", data_emissao=hoje - datetime.timedelta(days=20),
-        )
-        entrada = Parcela.objects.create(
-            titulo=venda, numero=1, valor=Decimal("60000"), vencimento=hoje - datetime.timedelta(days=20)
-        )
-        for n in range(1, 13):
-            Parcela.objects.create(
-                titulo=venda, numero=n + 1, valor=Decimal("8500"),
-                vencimento=hoje + datetime.timedelta(days=30 * n - 20),
-            )
-        financeiro.baixar(entrada, conta, data=hoje - datetime.timedelta(days=20))
-
         self.stdout.write(self.style.SUCCESS(
             f"Financeiro de exemplo: saldo em conta R$ {conta.saldo_atual}."
+        ))
+
+    def carregar_comercial(self):
+        hoje = datetime.date.today()
+        obra = Obra.objects.get(codigo="OB-001")
+        conta = ContaBancaria.objects.get(descricao=CONTA_EXEMPLO)
+        venda = CategoriaFinanceira.objects.get(codigo="1.01")
+
+        unidades = {}
+        for andar in range(1, 5):
+            for final in range(1, 5):
+                ident = f"{andar}0{final}"
+                unidades[ident] = Unidade.objects.create(
+                    obra=obra, bloco="Torre A", andar=andar, identificador=ident,
+                    area_privativa=Decimal("68.50") if final in (1, 4) else Decimal("54.20"),
+                    quartos=3 if final in (1, 4) else 2, vagas=1,
+                    preco_tabela=(Decimal("420000") if final in (1, 4) else Decimal("335000"))
+                    + Decimal("8000") * (andar - 1),
+                )
+        for ident in ("402", "403"):
+            unidades[ident].status = Unidade.Status.RESERVADA
+            unidades[ident].save()
+        unidades["404"].status = Unidade.Status.BLOQUEADA
+        unidades["404"].save()
+
+        # INCC dos últimos meses.
+        mes = somar_meses(hoje.replace(day=1), -6)
+        for variacao in ["0.42", "0.38", "0.51", "0.29", "0.35", "0.47"]:
+            IndiceEconomico.objects.create(indice="INCC", mes=mes, variacao=Decimal(variacao))
+            mes = somar_meses(mes, 1)
+
+        def contrato(ident, nome, cpf, data, valor, series):
+            cliente = Cliente.objects.create(nome=nome, cpf_cnpj=cpf, cidade="Porto Alegre", uf="RS")
+            c = ContratoVenda.objects.create(
+                unidade=unidades[ident], cliente=cliente, data_contrato=data, valor_total=Decimal(valor),
+            )
+            for tipo, qtd, valor_parc, venc, intervalo in series:
+                SerieParcelas.objects.create(
+                    contrato=c, tipo=tipo, quantidade=qtd, valor=Decimal(valor_parc),
+                    primeiro_vencimento=venc, intervalo_meses=intervalo,
+                )
+            comercial.efetivar(c, categoria=venda)
+            return c
+
+        T = SerieParcelas.Tipo
+        d1 = hoje - datetime.timedelta(days=20)
+        c1 = contrato("101", "Maria Exemplo", "000.000.000-00", d1, "420000.00", [
+            (T.ENTRADA, 1, "60000", d1, 1),
+            (T.MENSAL, 24, "5000", somar_meses(d1, 1), 1),
+            (T.FINANCIAMENTO, 1, "240000", somar_meses(d1, 30), 1),
+        ])
+        financeiro.baixar(c1.titulo.parcelas.get(numero=1), conta, data=d1)
+
+        d2 = somar_meses(hoje, -4)
+        c2 = contrato("203", "João Exemplo", "111.111.111-11", d2, "351000.00", [
+            (T.ENTRADA, 1, "35100", d2, 1),
+            (T.MENSAL, 36, "3000", somar_meses(d2, 1), 1),
+            (T.INTERMEDIARIA, 3, "15000", somar_meses(d2, 6), 12),
+            (T.CHAVES, 1, "63900", somar_meses(d2, 30), 1),
+            (T.FINANCIAMENTO, 1, "99000", somar_meses(d2, 36), 1),
+        ])
+        for parcela in c2.titulo.parcelas.filter(vencimento__lte=hoje).order_by("vencimento"):
+            financeiro.baixar(parcela, conta, data=parcela.vencimento)
+        meses = comercial.reajustar(c2)
+
+        contrato("302", "Ana Exemplo", "222.222.222-22", hoje, "351000.00", [
+            (T.ENTRADA, 1, "51000", hoje + datetime.timedelta(days=5), 1),
+            (T.FINANCIAMENTO, 1, "300000", somar_meses(hoje, 2), 1),
+        ])
+        self.stdout.write(self.style.SUCCESS(
+            f"Comercial de exemplo: {len(unidades)} unidades, 3 contratos, {meses} reajuste(s) INCC aplicados."
         ))

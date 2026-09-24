@@ -5,6 +5,7 @@
   <div class="app-relatorios module">
     <table style="width: 100%">
       <caption><span class="section">Relatórios</span></caption>
+      <tr><th scope="row"><a href="{% url 'comercial:espelho' %}">Espelho de vendas</a></th></tr>
       <tr><th scope="row"><a href="{% url 'financeiro:fluxo_caixa' %}">Fluxo de caixa</a></th></tr>
       <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelapagar_changelist' %}?situacao=vencidas">Contas a pagar vencidas</a></th></tr>
       <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelareceber_changelist' %}?situacao=vencidas">Contas a receber vencidas</a></th></tr>

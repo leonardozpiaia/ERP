@@ -147,11 +147,13 @@ class Titulo(models.Model):
 
     @property
     def total(self):
-        return self.parcelas.aggregate(total=Sum("valor"))["total"] or ZERO
+        return arredondar(self.parcelas.aggregate(total=Sum("valor"))["total"])
 
     @property
     def baixado(self):
-        return Baixa.objects.filter(parcela__titulo=self).aggregate(total=Sum("valor"))["total"] or ZERO
+        return arredondar(
+            Baixa.objects.filter(parcela__titulo=self).aggregate(total=Sum("valor"))["total"]
+        )
 
     @property
     def saldo(self):
