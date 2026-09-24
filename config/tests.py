@@ -93,3 +93,12 @@ class PrepararDemoTests(TestCase):
         with self.assertRaises(CommandError):
             call_command("preparar_demo", stdout=open("/dev/null", "w"))
         self.assertFalse(User.objects.exists())
+
+
+class PainelTests(TestCase):
+    def test_versao_e_atalho_de_importacao(self):
+        from config.versao import VERSAO
+        self.client.force_login(User.objects.create_superuser("adm", "a@a.com", "x"))
+        resp = self.client.get(reverse("admin:index"))
+        self.assertContains(resp, VERSAO)
+        self.assertContains(resp, reverse("orcamento:importar"))
