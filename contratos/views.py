@@ -2,10 +2,10 @@ import datetime
 
 from django import forms
 from django.contrib import admin
-from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, render
 
+from config.permissoes import requer
 from obras.models import Obra
 from orcamento.models import arredondar
 
@@ -13,7 +13,7 @@ from . import services
 from .models import ZERO, ItemMedicao, Medicao
 
 
-@staff_member_required
+@requer("contratos.view_medicao")
 def boletim(request, pk):
     """Boletim de medição para impressão: contratado, anterior, atual, acumulado e saldo."""
     medicao = get_object_or_404(
@@ -62,7 +62,7 @@ class RetencoesForm(forms.Form):
     obra = forms.ModelChoiceField(label="Obra", queryset=Obra.objects.all(), required=False)
 
 
-@staff_member_required
+@requer("contratos.view_medicao")
 def retencoes(request):
     hoje = datetime.date.today()
     inicio = hoje.replace(day=1)

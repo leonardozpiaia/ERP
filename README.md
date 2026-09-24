@@ -130,6 +130,23 @@ Os relatórios ficam no topo do painel inicial.
 - O relatório da obra virou **Orçado × realizado**: comprado (pedidos) +
   medido (empreiteiros), saldo, % realizado e pago, por etapa.
 
+## Colocar no ar (produção)
+
+O guia completo, passo a passo, está em **[DEPLOY.md](DEPLOY.md)**. Em resumo,
+em um servidor com Docker:
+
+```bash
+cp .env.exemplo .env   # preencha domínio, chave secreta e senha do banco
+docker compose up -d --build
+docker compose exec web python manage.py createsuperuser
+```
+
+Isso sobe o sistema com PostgreSQL, HTTPS automático (Caddy) e backup diário
+do banco. Ao iniciar, o sistema aplica as mudanças no banco e atualiza os
+**perfis de acesso** (Diretoria, Engenharia, Compras, Financeiro,
+Comercial), definidos em `config/perfis.py`. As telas de relatório também
+respeitam os perfis.
+
 ## Como rodar localmente
 
 Pré-requisito: Python 3.11 ou mais novo.
@@ -160,6 +177,8 @@ python manage.py test
 | `DJANGO_SECRET_KEY` | chave de desenvolvimento | **Obrigatório trocar em produção** |
 | `DJANGO_DEBUG` | `true` | Use `false` em produção |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Domínios aceitos, separados por vírgula |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | *(vazio)* | Endereços com `https://` de onde vêm os formulários |
+| `DATABASE_URL` | *(vazio)* | Endereço completo do PostgreSQL (`postgres://usuario:senha@servidor:5432/banco`); tem prioridade |
 | `POSTGRES_DB` | *(vazio)* | Se definido, usa PostgreSQL em vez de SQLite |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_HOST` / `POSTGRES_PORT` | `postgres` / vazio / `localhost` / `5432` | Conexão com o PostgreSQL |
 
@@ -179,4 +198,6 @@ comercial/   unidades, espelho de vendas, contratos, reajustes, distrato
 contratos/   contratos de empreitada, medições, boletim, retenções
              (regras de negócio em contratos/services.py)
 templates/   ajustes nas telas do painel (relatórios na página inicial)
+config/      configurações, rotas, perfis de acesso (perfis.py) e /saude/
+deploy/      script de inicialização, backup, restauração e Caddyfile
 ```

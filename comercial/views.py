@@ -1,17 +1,17 @@
 from collections import defaultdict
 
 from django.contrib import admin
-from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum
 from django.shortcuts import render
 
+from config.permissoes import requer
 from financeiro.models import Baixa
 from obras.models import Obra
 
 from .models import ZERO, ContratoVenda, Unidade
 
 
-@staff_member_required
+@requer("comercial.view_unidade")
 def espelho(request):
     obras = Obra.objects.filter(unidades__isnull=False).distinct()
     obra = obras.filter(pk=request.GET.get("obra")).first() or obras.first()

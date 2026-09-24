@@ -1,11 +1,12 @@
 from django.contrib import admin
-from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render
+
+from config.permissoes import requer
 
 from .models import ItemOrcamento, Orcamento
 
 
-@staff_member_required
+@requer("orcamento.view_orcamento")
 def eap(request, pk):
     orcamento = get_object_or_404(Orcamento.objects.select_related("obra"), pk=pk)
     itens_por_etapa = {}

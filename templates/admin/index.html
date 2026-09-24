@@ -2,17 +2,31 @@
 
 {% block content %}
 <div id="content-main">
+  {% if perms.comercial.view_unidade or perms.financeiro.view_titulopagar or perms.financeiro.view_parcelareceber or perms.contratos.view_medicao or perms.orcamento.view_orcamento %}
   <div class="app-relatorios module">
     <table style="width: 100%">
       <caption><span class="section">Relatórios</span></caption>
+      {% if perms.comercial.view_unidade %}
       <tr><th scope="row"><a href="{% url 'comercial:espelho' %}">Espelho de vendas</a></th></tr>
+      {% endif %}
+      {% if perms.financeiro.view_titulopagar %}
       <tr><th scope="row"><a href="{% url 'financeiro:fluxo_caixa' %}">Fluxo de caixa</a></th></tr>
+      {% endif %}
+      {% if perms.financeiro.view_parcelapagar %}
       <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelapagar_changelist' %}?situacao=vencidas">Contas a pagar vencidas</a></th></tr>
+      {% endif %}
+      {% if perms.financeiro.view_parcelareceber %}
       <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelareceber_changelist' %}?situacao=vencidas">Contas a receber vencidas</a></th></tr>
+      {% endif %}
+      {% if perms.contratos.view_medicao %}
       <tr><th scope="row"><a href="{% url 'contratos:retencoes' %}">Retenções de medições (INSS / ISS / caução)</a></th></tr>
+      {% endif %}
+      {% if perms.orcamento.view_orcamento %}
       <tr><th scope="row"><a href="{% url 'admin:orcamento_orcamento_changelist' %}">EAP e orçado × realizado (abra o orçamento)</a></th></tr>
+      {% endif %}
     </table>
   </div>
+  {% endif %}
   {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
 </div>
 {% endblock %}

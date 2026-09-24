@@ -2,12 +2,12 @@ import datetime
 
 from django import forms
 from django.contrib import admin, messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
+from config.permissoes import requer
 from cadastros.models import Empresa
 from obras.models import Obra
 
@@ -24,7 +24,7 @@ class BaixaLoteForm(forms.Form):
         self.fields["conta"].queryset = ContaBancaria.objects.filter(ativa=True, empresa__in=empresas)
 
 
-@staff_member_required
+@requer("financeiro.add_baixa")
 def baixa_lote(request):
     ids = [int(i) for i in request.GET.get("ids", "").split(",") if i.isdigit()]
     parcelas = list(Parcela.objects.em_aberto().filter(pk__in=ids).select_related("titulo__empresa"))
@@ -86,7 +86,7 @@ class FluxoForm(forms.Form):
         return dados
 
 
-@staff_member_required
+@requer("financeiro.view_titulopagar")
 def fluxo_caixa(request):
     hoje = datetime.date.today()
     padrao = {

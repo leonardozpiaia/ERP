@@ -1,12 +1,12 @@
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import admin, messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from config.permissoes import requer
 from contratos.services import medido_por_etapa, medido_sem_etapa
 from financeiro.services import pago_por_etapa
 from orcamento.models import Orcamento, arredondar
@@ -34,7 +34,7 @@ def ler_decimal(texto):
         raise ValidationError(f"Valor inválido: {texto}") from None
 
 
-@staff_member_required
+@requer("suprimentos.view_cotacao")
 def mapa_cotacao(request, pk):
     cotacao = get_object_or_404(Cotacao, pk=pk)
     propostas = list(cotacao.propostas.select_related("fornecedor").order_by("pk"))
@@ -111,7 +111,7 @@ def mapa_cotacao(request, pk):
     return render(request, "suprimentos/mapa_cotacao.html", contexto)
 
 
-@staff_member_required
+@requer("orcamento.view_orcamento")
 def orcado_comprado(request, pk):
     """Orçado x realizado por etapa: compras (pedidos), medições de empreiteiros e pago."""
     orcamento = get_object_or_404(Orcamento.objects.select_related("obra"), pk=pk)
