@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
 
+from financeiro.admin import moeda
 from financeiro.services import gerar_titulo_do_recebimento
 
 from . import services
@@ -63,11 +64,11 @@ class ItemSolicitacaoInline(SomenteLeituraInline, admin.TabularInline):
 
     @admin.display(description="já pedido")
     def pedido(self, obj):
-        return obj.quantidade_pedida if obj.pk else "-"
+        return formatar_quantidade(obj.quantidade_pedida) if obj.pk else "-"
 
     @admin.display(description="saldo")
     def saldo(self, obj):
-        return obj.saldo if obj.pk else "-"
+        return formatar_quantidade(obj.saldo) if obj.pk else "-"
 
 
 @admin.register(SolicitacaoCompra)
@@ -172,11 +173,11 @@ class ItemPedidoInline(SomenteLeituraInline, admin.TabularInline):
 
     @admin.display(description="total")
     def total(self, obj):
-        return obj.total if obj.pk else "-"
+        return moeda(obj.total) if obj.pk else "-"
 
     @admin.display(description="recebido")
     def recebido(self, obj):
-        return obj.quantidade_recebida if obj.pk else "-"
+        return formatar_quantidade(obj.quantidade_recebida) if obj.pk else "-"
 
 
 class RecebimentoInline(admin.TabularInline):
@@ -211,7 +212,7 @@ class PedidoCompraAdmin(admin.ModelAdmin):
 
     @admin.display(description="total")
     def total(self, obj):
-        return obj.total if obj.pk else "-"
+        return moeda(obj.total) if obj.pk else "-"
 
     @admin.display(description="recebimento")
     def receber(self, obj):
