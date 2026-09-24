@@ -81,13 +81,12 @@ class OrcamentoAdmin(admin.ModelAdmin):
 class ItemOrcamentoInline(admin.TabularInline):
     model = ItemOrcamento
     extra = 1
-    autocomplete_fields = ["composicao", "insumo"]
-    fields = ["composicao", "insumo", "quantidade", "preco_unitario", "unidade", "total"]
-    readonly_fields = ["unidade", "total"]
-
-    @admin.display(description="unidade")
-    def unidade(self, obj):
-        return obj.unidade if obj.pk else "-"
+    autocomplete_fields = ["composicao", "insumo", "unidade_medida"]
+    fields = [
+        "codigo", "composicao", "insumo", "descricao", "unidade_medida", "quantidade",
+        "preco_unitario", "total",
+    ]
+    readonly_fields = ["total"]
 
     @admin.display(description="total")
     def total(self, obj):

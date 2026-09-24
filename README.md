@@ -33,6 +33,26 @@ no desenvolvimento.
   preços novos para um orçamento em rascunho, use a ação *"Atualizar preços"*
   na lista de orçamentos.
 
+## Importar orçamento de planilha (Excel)
+
+Em **Orçamentos → Importar planilha (Excel)**: escolha a obra, a data-base, o
+BDI e o arquivo `.xlsx`. O sistema mostra uma **prévia** (etapas, itens,
+totais e avisos) e só cria o orçamento depois da confirmação.
+
+- A planilha pode ter título e dados da obra no topo e colunas em qualquer
+  ordem. O cabeçalho é reconhecido pelos nomes usuais: *Item*, *Código*,
+  *Descrição*, *Und*, *Quant.*, *Preço/Custo unitário*, *Total*. Se houver
+  preço com e sem BDI, é usado o **sem BDI**.
+- A EAP sai da numeração da coluna *Item* (1, 1.1, 1.1.1...): linhas **sem
+  quantidade** viram etapas e linhas **com quantidade** viram itens.
+- Números em formato brasileiro (1.234,56) são aceitos. Linhas em branco e
+  de totalização são ignoradas.
+- Se o *Código* do item for igual ao de uma composição ou insumo cadastrado,
+  o item fica ligado a ele; os demais entram como itens avulsos, com a
+  descrição, a unidade e o preço da planilha.
+- Avisa quando quantidade × preço não bate com o total da linha.
+- Há uma **planilha modelo** para baixar na própria tela.
+
 ## Fluxo de compras (Suprimentos)
 
 ```

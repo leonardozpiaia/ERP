@@ -5,7 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F, Sum
 
-from cadastros.models import Composicao, Insumo
+from cadastros.models import Composicao, Insumo, UnidadeMedida
 from obras.models import Obra
 
 CENTAVOS = Decimal("0.01")
@@ -144,7 +144,11 @@ class Etapa(models.Model):
 
 
 class ItemOrcamento(models.Model):
-    """Serviço orçado dentro de uma etapa, baseado em uma composição ou um insumo."""
+    """Serviço orçado dentro de uma etapa.
+
+    Pode vir de uma composição, de um insumo ou ser avulso (descrição, unidade
+    e preço próprios, como os itens importados de planilha).
+    """
 
     etapa = models.ForeignKey(
         Etapa, on_delete=models.CASCADE, related_name="itens", verbose_name="etapa"
@@ -158,6 +162,21 @@ class ItemOrcamento(models.Model):
     )
     insumo = models.ForeignKey(
         Insumo, on_delete=models.PROTECT, null=True, blank=True, verbose_name="insumo"
+    )
+    codigo = models.CharField(
+        "código", max_length=30, blank=True, help_text="Código do item na planilha (ex.: 1.2.3)."
+    )
+    descricao = models.CharField(
+        "descrição", max_length=500, blank=True,
+        help_text="Para itens avulsos. Com composição ou insumo, pode ficar em branco.",
+    )
+    unidade_medida = models.ForeignKey(
+        UnidadeMedida,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="unidade",
+        help_text="Para itens avulsos.",
     )
     quantidade = models.DecimalField(
         "quantidade",
@@ -176,25 +195,38 @@ class ItemOrcamento(models.Model):
     class Meta:
         verbose_name = "item do orçamento"
         verbose_name_plural = "itens do orçamento"
+        ordering = ["pk"]
         constraints = [
             models.CheckConstraint(
                 condition=(
                     models.Q(composicao__isnull=False, insumo__isnull=True)
                     | models.Q(composicao__isnull=True, insumo__isnull=False)
+                    | (
+                        models.Q(composicao__isnull=True, insumo__isnull=True)
+                        & ~models.Q(descricao="")
+                    )
                 ),
-                name="item_composicao_ou_insumo",
+                name="item_composicao_insumo_ou_avulso",
             )
         ]
 
     def __str__(self):
-        return str(self.origem)
+        return self.descricao_exibida
 
     @property
     def origem(self):
         return self.composicao or self.insumo
 
     @property
+    def descricao_exibida(self):
+        if self.descricao:
+            return self.descricao
+        return str(self.origem) if self.origem else ""
+
+    @property
     def unidade(self):
+        if self.unidade_medida_id:
+            return self.unidade_medida
         return self.origem.unidade if self.origem else None
 
     @property
@@ -202,13 +234,26 @@ class ItemOrcamento(models.Model):
         return arredondar(self.quantidade * self.preco_unitario)
 
     def preco_atual(self):
+        """Preço de hoje nos cadastros; itens avulsos mantêm o próprio preço."""
         if self.composicao_id:
             return self.composicao.custo_unitario
-        return self.insumo.preco_unitario
+        if self.insumo_id:
+            return self.insumo.preco_unitario
+        return self.preco_unitario
 
     def clean(self):
-        if bool(self.composicao_id) == bool(self.insumo_id):
-            raise ValidationError("Informe uma composição ou um insumo (apenas um dos dois).")
+        if self.composicao_id and self.insumo_id:
+            raise ValidationError("Informe uma composição ou um insumo, não os dois.")
+        if not self.composicao_id and not self.insumo_id:
+            erros = {}
+            if not self.descricao:
+                erros["descricao"] = "Informe a descrição, ou escolha uma composição ou um insumo."
+            if not self.unidade_medida_id:
+                erros["unidade_medida"] = "Informe a unidade do item avulso."
+            if self.preco_unitario is None:
+                erros["preco_unitario"] = "Informe o preço do item avulso."
+            if erros:
+                raise ValidationError(erros)
 
     def save(self, *args, **kwargs):
         if self.preco_unitario is None:

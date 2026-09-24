@@ -1,0 +1,115 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+<style>
+  .passos { display: grid; gap: 4px; margin: 0 0 1.2em; padding-left: 1.2em; max-width: 80ch; }
+  .formulario .form-row { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; }
+  .formulario label { min-width: 190px; font-weight: bold; }
+  .formulario .help { flex-basis: 100%; margin-left: 206px; }
+  table.previa { width: 100%; }
+  table.previa td.num, table.previa th.num { text-align: right; white-space: nowrap; }
+  table.previa tr.raiz td { font-weight: bold; }
+  .cartoes { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .cartao { border: 1px solid var(--hairline-color); border-radius: 6px; padding: 8px 14px; }
+  .cartao .rotulo { font-size: 11px; text-transform: uppercase; color: var(--body-quiet-color); }
+  .cartao .valor { font-size: 17px; font-weight: bold; }
+  ul.avisos li { margin-bottom: 4px; }
+  .confirmar { margin-top: 1.5em; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  @media (max-width: 767px) { .formulario .help { margin-left: 0; } }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Início</a> &rsaquo;
+  <a href="{% url 'admin:orcamento_orcamento_changelist' %}">Orçamentos</a> &rsaquo;
+  Importar planilha
+</div>
+{% endblock %}
+
+{% block content %}
+{% if leitura and leitura.ok %}
+  <h2>Prévia da importação &mdash; confira antes de confirmar</h2>
+  <p>Aba <strong>{{ leitura.aba }}</strong>. Colunas reconhecidas:
+    {% for nome, coluna in leitura.colunas.items %}{{ nome }} ({{ coluna }}){% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+
+  <div class="cartoes">
+    <div class="cartao"><div class="rotulo">Obra</div><div class="valor">{{ obra }}</div></div>
+    <div class="cartao"><div class="rotulo">Etapas</div><div class="valor">{{ leitura.etapas|length }}</div></div>
+    <div class="cartao"><div class="rotulo">Itens</div><div class="valor">{{ leitura.itens|length }}</div></div>
+    <div class="cartao"><div class="rotulo">Custo direto</div><div class="valor">R$ {{ total|floatformat:"2g" }}</div></div>
+    <div class="cartao"><div class="rotulo">Com BDI de {{ bdi|floatformat:2 }}%</div><div class="valor">R$ {{ total_com_bdi|floatformat:"2g" }}</div></div>
+  </div>
+
+  {% if leitura.avisos %}
+  <h3>Avisos ({{ leitura.avisos|length }})</h3>
+  <ul class="avisos">{% for aviso in leitura.avisos %}<li>{{ aviso }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <h3>Etapas</h3>
+  <div style="overflow-x:auto">
+  <table class="previa">
+    <thead><tr><th>Código</th><th>Etapa</th><th class="num">Itens</th><th class="num">Total</th></tr></thead>
+    <tbody>
+    {% for l in resumo %}
+      <tr {% if l.nivel == 0 %}class="raiz"{% endif %}>
+        <td style="padding-left: {{ l.nivel|add:1 }}em">{{ l.etapa.codigo }}</td>
+        <td>{{ l.etapa.descricao }}</td>
+        <td class="num">{{ l.itens }}</td>
+        <td class="num">{{ l.total|floatformat:"2g" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Primeiros itens</h3>
+  <div style="overflow-x:auto">
+  <table class="previa">
+    <thead><tr><th>Linha</th><th>Etapa</th><th>Item</th><th>Descrição</th><th>Un.</th><th class="num">Quant.</th><th class="num">Preço unit.</th></tr></thead>
+    <tbody>
+    {% for i in amostra %}
+      <tr><td>{{ i.linha }}</td><td>{{ i.etapa }}</td><td>{{ i.codigo }}</td><td>{{ i.descricao }}</td><td>{{ i.unidade }}</td>
+        <td class="num">{{ i.quantidade|floatformat:"-4g" }}</td>
+        <td class="num">{% if i.preco is not None %}{{ i.preco|floatformat:"2g" }}{% else %}do cadastro{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <form method="post" class="confirmar">
+    {% csrf_token %}
+    <input type="submit" name="confirmar" class="default" value="Confirmar e criar o orçamento">
+    <a href="{% url 'orcamento:importar' %}">Enviar outra planilha</a>
+  </form>
+
+{% else %}
+  <ol class="passos">
+    <li>A planilha precisa ter uma linha de cabeçalho com as colunas de <strong>descrição</strong>, <strong>quantidade</strong> e <strong>preço unitário</strong>. As colunas <strong>Item</strong> (numeração 1, 1.1, 1.1.1...), <strong>Código</strong>, <strong>Unidade</strong> e <strong>Total</strong> são opcionais, mas recomendadas.</li>
+    <li>Linhas <strong>sem quantidade</strong> viram <strong>etapas</strong>; linhas <strong>com quantidade</strong> viram <strong>itens</strong> da etapa acima.</li>
+    <li>Se o código de um item for igual ao de uma composição ou insumo cadastrado, o item fica ligado a ele.</li>
+    <li>Na dúvida, <a href="{% url 'orcamento:modelo_planilha' %}">baixe a planilha modelo</a>.</li>
+  </ol>
+
+  {% if leitura and leitura.erros %}
+  <p class="errornote">A planilha tem problemas. Corrija e envie de novo:</p>
+  <ul class="errorlist">{% for erro in leitura.erros|slice:":30" %}<li>{{ erro }}</li>{% endfor %}</ul>
+  {% if leitura.erros|length > 30 %}<p>... e mais {{ leitura.erros|length|add:"-30" }} problema(s).</p>{% endif %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="formulario">
+    {% csrf_token %}
+    {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+    <fieldset class="module aligned">
+    {% for campo in form %}
+      <div class="form-row">
+        {{ campo.errors }}
+        {{ campo.label_tag }} {{ campo }}
+        {% if campo.help_text %}<div class="help">{{ campo.help_text }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    </fieldset>
+    <div class="submit-row"><input type="submit" class="default" value="Ler planilha e ver prévia"></div>
+  </form>
+{% endif %}
+{% endblock %}

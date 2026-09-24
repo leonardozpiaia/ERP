@@ -46,8 +46,8 @@
     </tr>
     {% for item in linha.itens %}
     <tr>
-      <td></td>
-      <td style="padding-left: {{ linha.nivel|add:2 }}em">{{ item.origem }}</td>
+      <td style="padding-left: {{ linha.nivel|add:2 }}em">{{ item.codigo }}</td>
+      <td style="padding-left: {{ linha.nivel|add:2 }}em">{{ item.descricao_exibida }}</td>
       <td>{{ item.unidade }}</td>
       <td class="num">{{ item.quantidade|floatformat:4|intcomma }}</td>
       <td class="num">{{ item.preco_unitario|floatformat:2|intcomma }}</td>
