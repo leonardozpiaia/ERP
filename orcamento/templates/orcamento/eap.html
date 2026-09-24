@@ -1,0 +1,66 @@
+{% extends "admin/base_site.html" %}
+{% load humanize %}
+
+{% block title %}EAP - {{ orcamento }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+  table.eap { width: 100%; }
+  table.eap td.num, table.eap th.num { text-align: right; white-space: nowrap; }
+  table.eap tr.etapa td { font-weight: bold; background: var(--darkened-bg); }
+  table.eap tr.resumo td { font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Início</a> &rsaquo;
+  <a href="{% url 'admin:orcamento_orcamento_changelist' %}">Orçamentos</a> &rsaquo;
+  <a href="{% url 'admin:orcamento_orcamento_change' orcamento.pk %}">{{ orcamento }}</a> &rsaquo;
+  EAP
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ orcamento.obra }} &mdash; {{ orcamento.descricao }} (v{{ orcamento.versao }})</h1>
+<p>Data-base: {{ orcamento.data_base|date:"d/m/Y" }} &middot; Status: {{ orcamento.get_status_display }}</p>
+
+<table class="eap">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Descrição</th>
+      <th>Un.</th>
+      <th class="num">Quantidade</th>
+      <th class="num">Preço unit.</th>
+      <th class="num">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for linha in linhas %}
+    <tr class="etapa">
+      <td style="padding-left: {{ linha.nivel|add:1 }}em">{{ linha.etapa.codigo }}</td>
+      <td colspan="4">{{ linha.etapa.descricao }}</td>
+      <td class="num">{{ linha.total|floatformat:2|intcomma }}</td>
+    </tr>
+    {% for item in linha.itens %}
+    <tr>
+      <td></td>
+      <td style="padding-left: {{ linha.nivel|add:2 }}em">{{ item.origem }}</td>
+      <td>{{ item.unidade }}</td>
+      <td class="num">{{ item.quantidade|floatformat:4|intcomma }}</td>
+      <td class="num">{{ item.preco_unitario|floatformat:2|intcomma }}</td>
+      <td class="num">{{ item.total|floatformat:2|intcomma }}</td>
+    </tr>
+    {% endfor %}
+    {% empty %}
+    <tr><td colspan="6">Nenhuma etapa cadastrada.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="resumo"><td colspan="5">Custo direto</td><td class="num">{{ orcamento.custo_direto|floatformat:2|intcomma }}</td></tr>
+    <tr class="resumo"><td colspan="5">BDI ({{ orcamento.bdi_percentual|floatformat:2 }}%)</td><td class="num">{{ orcamento.valor_bdi|floatformat:2|intcomma }}</td></tr>
+    <tr class="resumo"><td colspan="5">Preço total</td><td class="num">{{ orcamento.preco_total|floatformat:2|intcomma }}</td></tr>
+  </tfoot>
+</table>
+{% endblock %}
