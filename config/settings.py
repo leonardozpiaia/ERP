@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "cadastros",
     "obras",
     "orcamento",
+    "suprimentos",
 ]
 
 MIDDLEWARE = [

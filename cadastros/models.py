@@ -20,6 +20,26 @@ class Empresa(models.Model):
         return self.nome_fantasia or self.razao_social
 
 
+class Fornecedor(models.Model):
+    razao_social = models.CharField("razão social", max_length=200)
+    nome_fantasia = models.CharField("nome fantasia", max_length=200, blank=True)
+    cpf_cnpj = models.CharField("CPF/CNPJ", max_length=18, unique=True)
+    contato = models.CharField("contato", max_length=100, blank=True)
+    email = models.EmailField("e-mail", blank=True)
+    telefone = models.CharField("telefone", max_length=20, blank=True)
+    cidade = models.CharField("cidade", max_length=100, blank=True)
+    uf = models.CharField("UF", max_length=2, blank=True)
+    ativo = models.BooleanField("ativo", default=True)
+
+    class Meta:
+        verbose_name = "fornecedor"
+        verbose_name_plural = "fornecedores"
+        ordering = ["razao_social"]
+
+    def __str__(self):
+        return self.nome_fantasia or self.razao_social
+
+
 class UnidadeMedida(models.Model):
     sigla = models.CharField("sigla", max_length=10, unique=True)
     descricao = models.CharField("descrição", max_length=60)

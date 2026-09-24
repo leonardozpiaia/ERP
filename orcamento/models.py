@@ -64,19 +64,24 @@ class Orcamento(models.Model):
     def preco_total(self):
         return self.custo_direto + self.valor_bdi
 
-    def arvore(self):
-        """EAP completa como lista de (etapa, nível, total) em ordem de exibição.
+    def arvore(self, *valores_por_etapa):
+        """EAP completa como lista de (etapa, nível, total, *extras) em ordem de exibição.
 
-        Os totais de cada etapa incluem as subetapas. Tudo é calculado com
-        duas consultas, independente do tamanho da EAP.
+        O total de cada etapa inclui as subetapas. Cada dicionário extra
+        {etapa_id: valor} passado é acumulado da mesma forma (por exemplo, o
+        valor comprado por etapa) e aparece após o total, na mesma ordem.
         """
         etapas = list(self.etapas.all())
+        orcado = {}
         itens = ItemOrcamento.objects.filter(etapa__orcamento=self).values(
             "etapa_id", "quantidade", "preco_unitario"
         )
-        total_direto = {e.pk: Decimal("0") for e in etapas}
         for item in itens:
-            total_direto[item["etapa_id"]] += item["quantidade"] * item["preco_unitario"]
+            orcado[item["etapa_id"]] = (
+                orcado.get(item["etapa_id"], Decimal("0"))
+                + item["quantidade"] * item["preco_unitario"]
+            )
+        series = [orcado, *valores_por_etapa]
 
         filhos = {}
         for etapa in etapas:
@@ -87,11 +92,11 @@ class Orcamento(models.Model):
         def visitar(etapa, nivel):
             posicao = len(resultado)
             resultado.append(None)
-            total = total_direto[etapa.pk]
+            totais = [serie.get(etapa.pk) or Decimal("0") for serie in series]
             for filho in filhos.get(etapa.pk, []):
-                total += visitar(filho, nivel + 1)
-            resultado[posicao] = (etapa, nivel, arredondar(total))
-            return total
+                totais = [a + b for a, b in zip(totais, visitar(filho, nivel + 1))]
+            resultado[posicao] = (etapa, nivel, *(arredondar(t) for t in totais))
+            return totais
 
         for raiz in filhos.get(None, []):
             visitar(raiz, 0)

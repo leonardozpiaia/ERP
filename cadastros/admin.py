@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Composicao, ComposicaoItem, Empresa, Insumo, UnidadeMedida
+from .models import Composicao, ComposicaoItem, Empresa, Fornecedor, Insumo, UnidadeMedida
 
 admin.site.site_header = "ERP Obras"
 admin.site.site_title = "ERP Obras"
@@ -12,6 +12,13 @@ class EmpresaAdmin(admin.ModelAdmin):
     list_display = ["razao_social", "nome_fantasia", "cnpj", "ativa"]
     list_filter = ["ativa"]
     search_fields = ["razao_social", "nome_fantasia", "cnpj"]
+
+
+@admin.register(Fornecedor)
+class FornecedorAdmin(admin.ModelAdmin):
+    list_display = ["razao_social", "nome_fantasia", "cpf_cnpj", "cidade", "uf", "telefone", "ativo"]
+    list_filter = ["ativo", "uf"]
+    search_fields = ["razao_social", "nome_fantasia", "cpf_cnpj"]
 
 
 @admin.register(UnidadeMedida)

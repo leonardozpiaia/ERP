@@ -1,0 +1,63 @@
+{% extends "admin/base_site.html" %}
+{% load humanize %}
+
+{% block title %}Orçado × comprado - {{ orcamento }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+  table.oc { width: 100%; }
+  table.oc td.num, table.oc th.num { text-align: right; white-space: nowrap; }
+  table.oc td.estouro { color: #ba2121; font-weight: bold; }
+  table.oc tr.raiz td { font-weight: bold; }
+  table.oc tfoot td { font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Início</a> &rsaquo;
+  <a href="{% url 'admin:orcamento_orcamento_changelist' %}">Orçamentos</a> &rsaquo;
+  <a href="{% url 'admin:orcamento_orcamento_change' orcamento.pk %}">{{ orcamento }}</a> &rsaquo;
+  Orçado × comprado
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Orçado × comprado &mdash; {{ orcamento.obra }} (v{{ orcamento.versao }})</h1>
+<p>Valores de custo direto, sem BDI. "Comprado" soma os pedidos aprovados, parcialmente entregues e entregues. <a href="{% url 'orcamento:eap' orcamento.pk %}">Ver EAP</a></p>
+
+<table class="oc">
+  <thead>
+    <tr>
+      <th>Código</th><th>Etapa</th>
+      <th class="num">Orçado</th><th class="num">Comprado</th><th class="num">Saldo</th><th class="num">% comprado</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for l in linhas %}
+    <tr {% if l.nivel == 0 %}class="raiz"{% endif %}>
+      <td style="padding-left: {{ l.nivel|add:1 }}em">{{ l.etapa.codigo }}</td>
+      <td>{{ l.etapa.descricao }}</td>
+      <td class="num">{{ l.orcado|floatformat:2|intcomma }}</td>
+      <td class="num">{{ l.comprado|floatformat:2|intcomma }}</td>
+      <td class="num {% if l.saldo < 0 %}estouro{% endif %}">{{ l.saldo|floatformat:2|intcomma }}</td>
+      <td class="num {% if l.saldo < 0 %}estouro{% endif %}">{% if l.percentual is not None %}{{ l.percentual|floatformat:1 }}%{% else %}&mdash;{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Nenhuma etapa cadastrada.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2">Total</td>
+      <td class="num">{{ total_orcado|floatformat:2|intcomma }}</td>
+      <td class="num">{{ total_comprado|floatformat:2|intcomma }}</td>
+      <td class="num {% if total_saldo < 0 %}estouro{% endif %}">{{ total_saldo|floatformat:2|intcomma }}</td>
+      <td class="num">{% if total_percentual is not None %}{{ total_percentual|floatformat:1 }}%{% else %}&mdash;{% endif %}</td>
+    </tr>
+  </tfoot>
+</table>
+{% if sem_etapa %}
+<p>Além disso, há <strong>R$ {{ sem_etapa|floatformat:2|intcomma }}</strong> comprados para esta obra sem etapa definida (não apropriados).</p>
+{% endif %}
+{% endblock %}

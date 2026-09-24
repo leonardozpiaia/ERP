@@ -11,11 +11,11 @@ no desenvolvimento.
 
 | Módulo | Situação | Conteúdo |
 |---|---|---|
-| Cadastros | ✅ pronto | Empresas, unidades de medida, insumos, composições de custo |
+| Cadastros | ✅ pronto | Empresas, fornecedores, unidades de medida, insumos, composições de custo |
 | Obras | ✅ pronto | Cadastro de obras por empresa, com status e datas |
 | Orçamento | ✅ pronto | Orçamento por obra com versões, EAP hierárquica, BDI e tela de EAP |
-| Suprimentos | ⏳ próximo | Solicitação, cotação e pedido de compra por obra |
-| Financeiro | ⏳ | Contas a pagar/receber, centros de custo, fluxo de caixa |
+| Suprimentos | ✅ pronto | Solicitação, cotação com mapa, pedido de compra, recebimento e relatório orçado × comprado |
+| Financeiro | ⏳ próximo | Contas a pagar/receber, centros de custo, fluxo de caixa |
 | Contratos e medições | ⏳ | Contratos com empreiteiros, medições, retenções |
 | Comercial | ⏳ | Espelho de vendas, contratos de venda, recebíveis |
 
@@ -33,6 +33,32 @@ no desenvolvimento.
   preços novos para um orçamento em rascunho, use a ação *"Atualizar preços"*
   na lista de orçamentos.
 
+## Fluxo de compras (Suprimentos)
+
+```
+Solicitação ──aprovar──▶ Cotação ──mapa de cotação──▶ Pedidos ──aprovar──▶ Recebimentos
+ (obra pede)            (fornecedores dão preço)    (1 por fornecedor/obra)  (notas fiscais)
+```
+
+1. **Solicitação de compra**: a obra lista os insumos de que precisa. Cada item
+   pode ser apropriado a uma **etapa do orçamento**. Depois é aprovada (ação
+   na lista de solicitações).
+2. **Cotação**: na lista de solicitações, selecione as aprovadas e use
+   *"Gerar cotação"*. Adicione os fornecedores na cotação e abra o **mapa de
+   cotação** para digitar os preços. O menor preço de cada item fica destacado.
+3. **Pedidos**: no mapa, *"Salvar e gerar pedidos pelo menor preço"* cria um
+   pedido por fornecedor e obra, em rascunho. Revise e aprove.
+4. **Recebimento**: no pedido aprovado, use *"Registrar recebimento"*. Os
+   itens com saldo já aparecem listados; basta digitar o que chegou. O pedido
+   passa a *entregue parcialmente* ou *entregue* sozinho, e não é possível
+   receber mais do que foi pedido.
+
+Itens que ficaram sem preço, ou pedidos cancelados, voltam como saldo na
+solicitação e podem ser cotados de novo.
+
+O relatório **Orçado × comprado** (link na tela da EAP) compara, por etapa, o
+custo orçado com o valor dos pedidos aprovados.
+
 ## Como rodar localmente
 
 Pré-requisito: Python 3.11 ou mais novo.
@@ -43,7 +69,7 @@ source .venv/bin/activate          # no Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 python manage.py migrate           # cria o banco
-python manage.py carregar_exemplo  # opcional: obra e orçamento de exemplo
+python manage.py carregar_exemplo  # opcional: obra, orçamento e um ciclo de compras de exemplo
 python manage.py createsuperuser   # cria seu usuário de acesso
 python manage.py runserver
 ```
@@ -70,7 +96,9 @@ python manage.py test
 
 ```
 config/      configurações do projeto e rotas principais
-cadastros/   empresas, unidades, insumos, composições
+cadastros/   empresas, fornecedores, unidades, insumos, composições
 obras/       obras
 orcamento/   orçamentos, EAP, itens e a tela de EAP
+suprimentos/ solicitações, cotações, pedidos, recebimentos
+             (regras de negócio em suprimentos/services.py)
 ```

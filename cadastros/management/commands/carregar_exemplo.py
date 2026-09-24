@@ -4,20 +4,37 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from cadastros.models import Composicao, ComposicaoItem, Empresa, Insumo, UnidadeMedida
+from cadastros.models import Composicao, ComposicaoItem, Empresa, Fornecedor, Insumo, UnidadeMedida
 from obras.models import Obra
 from orcamento.models import Etapa, ItemOrcamento, Orcamento
+from suprimentos import services
+from suprimentos.models import (
+    ItemRecebimento,
+    ItemSolicitacao,
+    PrecoCotado,
+    PropostaFornecedor,
+    Recebimento,
+    SolicitacaoCompra,
+)
+
+CNPJ_EXEMPLO = "11.111.111/0001-11"
 
 
 class Command(BaseCommand):
-    help = "Carrega uma empresa, uma obra e um orçamento de exemplo para testes."
+    help = "Carrega dados de exemplo: obra, orçamento e um ciclo de compras."
 
     @transaction.atomic
     def handle(self, *args, **options):
         if Obra.objects.filter(codigo="OB-001").exists():
-            self.stdout.write("Dados de exemplo já carregados.")
-            return
+            self.stdout.write("Orçamento de exemplo já carregado.")
+        else:
+            self.carregar_orcamento()
+        if Fornecedor.objects.filter(cpf_cnpj=CNPJ_EXEMPLO).exists():
+            self.stdout.write("Compras de exemplo já carregadas.")
+        else:
+            self.carregar_suprimentos()
 
+    def carregar_orcamento(self):
         un = {
             sigla: UnidadeMedida.objects.get_or_create(sigla=sigla, defaults={"descricao": desc})[0]
             for sigla, desc in [
@@ -80,3 +97,64 @@ class Command(BaseCommand):
         ItemOrcamento.objects.create(etapa=alv, composicao=alvenaria, quantidade=Decimal("1850"))
 
         self.stdout.write(self.style.SUCCESS(f"Exemplo carregado: {orc} — total R$ {orc.preco_total}"))
+
+    def carregar_suprimentos(self):
+        obra = Obra.objects.get(codigo="OB-001")
+        orc = obra.orcamentos.first()
+        etapa = {e.codigo: e for e in orc.etapas.all()}
+        insumo = {i.codigo: i for i in Insumo.objects.all()}
+
+        fornecedores = [
+            Fornecedor.objects.create(
+                razao_social=razao, nome_fantasia=fantasia, cpf_cnpj=cnpj, cidade="Porto Alegre", uf="RS"
+            )
+            for razao, fantasia, cnpj in [
+                ("Depósito Central Materiais Ltda", "Depósito Central", CNPJ_EXEMPLO),
+                ("Casa do Construtor Sul Ltda", "Construtor Sul", "22.222.222/0001-22"),
+                ("Aços Gaúchos S.A.", "Aços Gaúchos", "33.333.333/0001-33"),
+            ]
+        ]
+
+        sc = SolicitacaoCompra.objects.create(obra=obra, observacao="Material para fundações e alvenaria")
+        for codigo, qtd, cod_etapa in [
+            ("I-001", "315", "01.01"),   # cimento
+            ("I-002", "27", "01.01"),    # areia
+            ("I-007", "3500", "01.01"),  # aço
+            ("I-006", "48100", "03"),    # blocos
+        ]:
+            ItemSolicitacao.objects.create(
+                solicitacao=sc, insumo=insumo[codigo], quantidade=Decimal(qtd), etapa=etapa[cod_etapa]
+            )
+        services.aprovar_solicitacao(sc)
+        cotacao = services.gerar_cotacao([sc])
+
+        # Preços por fornecedor, na ordem: cimento, areia, aço, bloco (None = não cotou).
+        tabela = {
+            fornecedores[0]: (("36.50", "118.00", None, "1.29"), 7, "30 dias"),
+            fornecedores[1]: (("37.90", "112.00", "8.10", "1.35"), 5, "30/60 dias"),
+            fornecedores[2]: ((None, None, "7.45", None), 10, "28 dias"),
+        }
+        itens = list(cotacao.itens.order_by("pk"))
+        for fornecedor, (precos, prazo, condicao) in tabela.items():
+            proposta = PropostaFornecedor.objects.create(
+                cotacao=cotacao, fornecedor=fornecedor, prazo_entrega_dias=prazo,
+                condicao_pagamento=condicao,
+            )
+            for item, preco in zip(itens, precos):
+                if preco is not None:
+                    PrecoCotado.objects.create(proposta=proposta, item=item, preco_unitario=Decimal(preco))
+
+        pedidos = services.gerar_pedidos(cotacao)
+        for pedido in pedidos:
+            services.aprovar_pedido(pedido)
+
+        # Metade do aço já chegou na obra.
+        pedido_aco = next(p for p in pedidos if p.fornecedor == fornecedores[2])
+        item_aco = pedido_aco.itens.get()
+        receb = Recebimento.objects.create(pedido=pedido_aco, numero_nota="12345")
+        ItemRecebimento.objects.create(recebimento=receb, item_pedido=item_aco, quantidade=Decimal("1750"))
+        services.atualizar_status_pedido(pedido_aco)
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Compras de exemplo: {sc}, {cotacao} e {len(pedidos)} pedido(s) aprovados."
+        ))
