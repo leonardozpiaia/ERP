@@ -36,9 +36,34 @@ class OrcamentoAdmin(admin.ModelAdmin):
     list_filter = ["status", "obra"]
     search_fields = ["descricao", "obra__codigo", "obra__nome"]
     autocomplete_fields = ["obra"]
-    readonly_fields = ["custo_direto", "valor_bdi", "preco_total", "ver_eap"]
+    readonly_fields = ["custo_direto", "valor_bdi", "preco_total", "ver_eap", "etapas"]
     inlines = [EtapaInline]
     actions = ["atualizar_precos"]
+
+    # Acima deste número de etapas, a EAP não é editada nesta tela (ficaria pesada demais).
+    LIMITE_ETAPAS_NA_TELA = 60
+
+    def eap_grande(self, obj):
+        return obj is not None and obj.etapas.count() > self.LIMITE_ETAPAS_NA_TELA
+
+    def get_inlines(self, request, obj):
+        return [] if self.eap_grande(obj) else self.inlines
+
+    def get_fields(self, request, obj=None):
+        campos = super().get_fields(request, obj)
+        if not self.eap_grande(obj):
+            campos = [c for c in campos if c != "etapas"]
+        return campos
+
+    @admin.display(description="etapas")
+    def etapas(self, obj):
+        lista = reverse("admin:orcamento_etapa_changelist") + f"?orcamento__id__exact={obj.pk}"
+        nova = reverse("admin:orcamento_etapa_add") + f"?orcamento={obj.pk}"
+        return format_html(
+            '{} etapas. <a href="{}">Ver e editar etapas</a> · <a href="{}">Adicionar etapa</a> · '
+            '<a href="{}">Ver EAP</a>',
+            obj.etapas.count(), lista, nova, reverse("orcamento:eap", args=[obj.pk]),
+        )
 
     @admin.display(description="custo direto")
     def custo_direto(self, obj):
@@ -96,6 +121,7 @@ class ItemOrcamentoInline(admin.TabularInline):
 @admin.register(Etapa)
 class EtapaAdmin(admin.ModelAdmin):
     list_display = ["codigo", "descricao", "orcamento", "pai"]
+    list_select_related = ["orcamento__obra", "pai"]
     list_filter = ["orcamento"]
     search_fields = ["codigo", "descricao"]
     autocomplete_fields = ["orcamento", "pai"]

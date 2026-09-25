@@ -142,6 +142,9 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Etapas de orçamento com muitos itens geram formulários grandes; o padrão (1.000 campos) é pouco.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000
+
 LOGIN_URL = "admin:login"
 
 # Sessão expira após 10 horas (um dia de trabalho) e ao fechar o navegador.

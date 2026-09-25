@@ -132,9 +132,35 @@ class Leitura:
     erros: list = field(default_factory=list)
     avisos: list = field(default_factory=list)
 
+    grupos: dict = field(default_factory=dict)
+
     @property
     def ok(self):
         return not self.erros and bool(self.itens)
+
+    def agrupar(self, tipo, linha, valor=ZERO):
+        """Junta avisos repetitivos do mesmo tipo em uma única mensagem."""
+        grupo = self.grupos.setdefault(tipo, {"linhas": [], "valor": ZERO})
+        grupo["linhas"].append(linha)
+        grupo["valor"] += valor
+
+    def fechar_grupos(self):
+        mensagens = {
+            "zero": "{n} linha(s) com quantidade zero e sem total foram ignoradas",
+            "verba": "{n} linha(s) com quantidade zero, mas com total preenchido, entraram como verba "
+                     "(quantidade 1 × o total), somando R$ {valor}",
+            "sem_preco": "{n} item(ns) sem preço unitário entraram com preço zero, para completar depois",
+            "diferenca": "{n} linha(s) em que quantidade × preço não bate com o total da planilha; "
+                         "confira se a coluna de preço é a certa (com ou sem BDI)",
+        }
+        for tipo, grupo in self.grupos.items():
+            linhas = grupo["linhas"]
+            lista = ", ".join(str(n) for n in linhas[:12])
+            if len(linhas) > 12:
+                lista += f" e mais {len(linhas) - 12}"
+            texto = mensagens[tipo].format(n=len(linhas), valor=formatar(grupo["valor"]))
+            self.avisos.append(f"{texto} (linhas {lista}).")
+        self.grupos = {}
 
     def para_sessao(self):
         return {
@@ -157,30 +183,39 @@ class Leitura:
 
     def resumo(self):
         """Etapas em ordem, com nível, quantidade de itens e total (incluindo subetapas)."""
-        total_direto, contagem = {}, {}
-        for item in self.itens:
-            valor = Decimal(item.quantidade) * Decimal(item.preco or "0")
-            total_direto[item.etapa] = total_direto.get(item.etapa, ZERO) + valor
-            contagem[item.etapa] = contagem.get(item.etapa, 0) + 1
-        linhas = []
-        for etapa in self.etapas:
-            nivel, pai = 0, etapa.pai
+        pais = {e.codigo: e.pai for e in self.etapas}
+        niveis = {}
+        for codigo in pais:
+            nivel, pai = 0, pais[codigo]
             while pai:
-                nivel += 1
-                pai = next(e.pai for e in self.etapas if e.codigo == pai)
-            prefixo = etapa.codigo + "."
-            total = sum(
-                (v for c, v in total_direto.items() if c == etapa.codigo or c.startswith(prefixo)), ZERO
-            )
-            linhas.append({
-                "etapa": etapa, "nivel": nivel, "itens": contagem.get(etapa.codigo, 0),
-                "total": arredondar(total),
-            })
-        return linhas
+                nivel, pai = nivel + 1, pais[pai]
+            niveis[codigo] = nivel
+        totais = dict.fromkeys(pais, ZERO)
+        contagem = dict.fromkeys(pais, 0)
+        for item in self.itens:
+            totais[item.etapa] += Decimal(item.quantidade) * Decimal(item.preco or "0")
+            contagem[item.etapa] += 1
+        # Soma de baixo para cima: cada etapa passa o total para a etapa pai.
+        for codigo in sorted(pais, key=niveis.get, reverse=True):
+            if pais[codigo]:
+                totais[pais[codigo]] += totais[codigo]
+        return [
+            {"etapa": e, "nivel": niveis[e.codigo], "itens": contagem[e.codigo], "total": arredondar(totais[e.codigo])}
+            for e in self.etapas
+        ]
 
     @property
     def total(self):
         return arredondar(sum((Decimal(i.quantidade) * Decimal(i.preco or "0") for i in self.itens), ZERO))
+
+
+def coluna_e_numeracao(valores):
+    """True quando a coluna de código é só 1, 2, 3... (numeração de linhas, não código de cadastro)."""
+    valores = [v for v in valores if v]
+    if len(valores) < 3 or not all(v.isdigit() for v in valores):
+        return False
+    numeros = [int(v) for v in valores]
+    return all(b > a for a, b in zip(numeros, numeros[1:]))
 
 
 def achar_cabecalho(aba):
@@ -234,6 +269,8 @@ def ler_planilha(arquivo):
     etapas = {}
     ultima_etapa = None
     sequencia = 0
+    diferencas = []
+    referencias = []
 
     def celula(linha, campo):
         indice = colunas.get(campo)
@@ -243,6 +280,8 @@ def ler_planilha(arquivo):
                                    numero_cabecalho + 1):
         codigo = ler_codigo(celula(linha, "codigo"))
         descricao = ler_texto(celula(linha, "descricao"))
+        if celula(linha, "referencia") is not None:
+            referencias.append(ler_codigo(celula(linha, "referencia")))
         try:
             quantidade = ler_numero(celula(linha, "quantidade"))
             preco = ler_numero(celula(linha, "preco"))
@@ -286,13 +325,15 @@ def ler_planilha(arquivo):
         if quantidade < 0 or (preco is not None and preco < 0):
             leitura.erros.append(f"Linha {numero}: quantidade ou preço negativo.")
             continue
-        if quantidade == 0:
-            leitura.avisos.append(f"Linha {numero} ignorada: quantidade zero ({descricao[:60]}).")
-            continue
         referencia = ler_codigo(celula(linha, "referencia"))
-        if preco is None and not referencia:
-            leitura.erros.append(f"Linha {numero}: item sem preço unitário ({descricao[:60]}).")
-            continue
+        if quantidade == 0:
+            if total:
+                # Valor lançado só no total: vira verba para o orçamento fechar com a planilha.
+                quantidade, preco = Decimal("1"), total
+                leitura.agrupar("verba", numero, total)
+            else:
+                leitura.agrupar("zero", numero)
+                continue
         etapa = (pai_de(codigo, etapas) if codigo else None) or ultima_etapa
         if etapa is None:
             if CODIGO_SEM_ETAPA not in etapas:
@@ -303,10 +344,11 @@ def ler_planilha(arquivo):
         if total is not None and preco is not None:
             calculado = quantidade * preco
             if abs(calculado - total) > max(Decimal("0.05"), abs(total) * Decimal("0.005")):
-                leitura.avisos.append(
+                diferencas.append(
                     f"Linha {numero}: quantidade × preço = {formatar(calculado)}, mas o total da planilha é "
                     f"{formatar(total)}. Confira se a coluna de preço é a certa (com ou sem BDI)."
                 )
+                leitura.agrupar("diferenca", numero)
         leitura.itens.append(ItemLido(
             etapa=etapa, codigo=codigo[:30], referencia=referencia[:30], descricao=descricao[:500],
             unidade=unidade, quantidade=str(quantidade), preco=str(preco) if preco is not None else None,
@@ -314,13 +356,25 @@ def ler_planilha(arquivo):
         ))
 
     leitura.etapas = list(etapas.values())
+    if len(diferencas) <= 5:
+        # Poucas diferenças: mostra cada uma com os valores.
+        leitura.avisos.extend(diferencas)
+        leitura.grupos.pop("diferenca", None)
+    if coluna_e_numeracao(referencias):
+        for item in leitura.itens:
+            item.referencia = ""
+        leitura.avisos.append(
+            "A coluna \"Código\" traz só a numeração das linhas (1, 2, 3...); "
+            "ela não foi usada para ligar itens ao cadastro."
+        )
+    leitura.fechar_grupos()
     if not leitura.itens and not leitura.erros:
         leitura.erros.append("Nenhum item com quantidade foi encontrado abaixo do cabeçalho.")
     return leitura
 
 
 def conferir_cadastros(leitura):
-    """Liga os códigos da planilha aos cadastros e aponta itens sem preço nem cadastro."""
+    """Liga os códigos da planilha aos cadastros; itens sem preço nem cadastro ficam com preço zero."""
     codigos = {c.lower() for c in Composicao.objects.values_list("codigo", flat=True)}
     codigos |= {c.lower() for c in Insumo.objects.values_list("codigo", flat=True)}
     ligados = 0
@@ -328,9 +382,9 @@ def conferir_cadastros(leitura):
         encontrado = bool(item.referencia) and item.referencia.lower() in codigos
         ligados += encontrado
         if item.preco is None and not encontrado:
-            leitura.erros.append(
-                f"Linha {item.linha}: item sem preço e o código {item.referencia} não está cadastrado."
-            )
+            item.preco = "0"
+            leitura.agrupar("sem_preco", item.linha)
+    leitura.fechar_grupos()
     if ligados:
         leitura.avisos.append(
             f"{ligados} item(ns) ligados a composições ou insumos já cadastrados pelo código."

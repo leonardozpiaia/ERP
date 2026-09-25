@@ -92,6 +92,42 @@ class LeituraTests(TestCase):
         self.assertEqual([i.etapa for i in leitura.itens], ["01", "02"])
         self.assertTrue(any("não tem coluna" in a for a in leitura.avisos))
 
+    def test_quantidade_zero_com_total_vira_verba(self):
+        leitura = importacao.ler_planilha(planilha([
+            ["Item", "Descrição", "Und", "Quant.", "Preço unitário", "Total"],
+            ["1", "Acabamentos", None, None, None, None],
+            ["1.1", "Capeamentos", "m", 0, None, 1000],
+            ["1.2", "Pingadeiras", "m", 0, None, 1000],
+            ["1.3", "Sem nada", "m", 0, None, None],
+            ["1.4", "Rodapé", "m", 10, 5, 50],
+        ]))
+        self.assertEqual(leitura.erros, [])
+        self.assertEqual([(i.codigo, i.quantidade, i.preco) for i in leitura.itens],
+                         [("1.1", "1", "1000"), ("1.2", "1", "1000"), ("1.4", "10", "5")])
+        self.assertEqual(leitura.total, D("2050.00"))
+        self.assertIn("2 linha(s) com quantidade zero, mas com total preenchido, entraram como verba "
+                      "(quantidade 1 × o total), somando R$ 2.000,00 (linhas 3, 4).", leitura.avisos)
+        self.assertIn("1 linha(s) com quantidade zero e sem total foram ignoradas (linhas 5).", leitura.avisos)
+
+    def test_muitas_diferencas_viram_um_aviso_so(self):
+        linhas = [["Item", "Descrição", "Quant.", "Preço unitário", "Total"], ["1", "Etapa", None, None, None]]
+        linhas += [[f"1.{n}", f"Item {n}", 1, 10, 99] for n in range(1, 21)]
+        leitura = importacao.ler_planilha(planilha(linhas))
+        self.assertEqual(len(leitura.avisos), 1)
+        self.assertIn("20 linha(s) em que quantidade × preço não bate", leitura.avisos[0])
+        self.assertIn("e mais 8", leitura.avisos[0])
+
+    def test_coluna_codigo_so_com_numeracao_nao_liga_ao_cadastro(self):
+        leitura = importacao.ler_planilha(planilha([
+            ["Item", "Código", "Descrição", "Und", "Quant.", "Preço unitário"],
+            ["01", 1, "Bloco A", None, None, None],
+            ["01.001", 2, "Concreto", "m3", 10, 490],
+            ["01.002", 3, "Aço", "kg", 100, 7],
+        ]))
+        self.assertEqual([i.referencia for i in leitura.itens], ["", ""])
+        self.assertTrue(any("numeração das linhas" in a for a in leitura.avisos))
+        self.assertFalse(importacao.coluna_e_numeracao(["98459", "87292", "90001"]))
+
     def test_itens_antes_de_qualquer_etapa(self):
         leitura = importacao.ler_planilha(planilha([
             ["Item", "Descrição", "Und", "Quant", "Preço unitário"],
@@ -108,8 +144,6 @@ class LeituraTests(TestCase):
                          ["1.1", "Item", -2, 10]],
             "inválido": [["Item", "Descrição", "Quant", "Preço unitário"], ["1", "Etapa", None, None],
                          ["1.1", "Item", "dois", 10]],
-            "sem preço": [["Item", "Descrição", "Quant", "Preço unitário"], ["1", "Etapa", None, None],
-                          ["1.1", "Item", 2, None]],
             "duplicada": [["Item", "Descrição", "Quant", "Preço unitário"], ["1", "Etapa", None, None],
                           ["1", "De novo", None, None], ["1.1", "Item", 1, 1]],
         }
@@ -155,7 +189,7 @@ class ImportarTests(TestCase):
         orc2 = importacao.importar(leitura, self.obra, "Revisão", datetime.date(2026, 8, 1), D("0"))
         self.assertEqual(orc2.versao, 2)
 
-    def test_item_sem_preco_usa_cadastro(self):
+    def test_item_sem_preco_usa_cadastro_ou_entra_com_zero(self):
         leitura = importacao.ler_planilha(planilha([
             ["Item", "Código", "Descrição", "Und", "Quant", "Preço unitário"],
             ["1", None, "Estrutura", None, None, None],
@@ -163,8 +197,13 @@ class ImportarTests(TestCase):
             ["1.2", "X-999", "Sem cadastro", "m3", 10, None],
         ]))
         importacao.conferir_cadastros(leitura)
-        self.assertEqual(len(leitura.erros), 1)
-        self.assertIn("X-999", leitura.erros[0])
+        self.assertEqual(leitura.erros, [])
+        self.assertEqual([i.preco for i in leitura.itens], [None, "0"])
+        self.assertTrue(any("1 item(ns) sem preço unitário entraram com preço zero" in a for a in leitura.avisos))
+        orc = importacao.importar(leitura, self.obra, "O", datetime.date(2026, 8, 1), D("0"))
+        self.assertEqual(ItemOrcamento.objects.get(codigo="1.1").composicao, self.concreto)
+        self.assertEqual(ItemOrcamento.objects.get(codigo="1.2").preco_unitario, D("0"))
+        self.assertEqual(orc.etapas.count(), 1)
 
     def test_item_avulso_exige_descricao(self):
         orc = Orcamento.objects.create(obra=self.obra, descricao="O", data_base=datetime.date.today())
@@ -207,6 +246,23 @@ class TelaImportacaoTests(TestCase):
         # Confirmar de novo não duplica: a prévia já foi usada.
         self.client.post(self.url, {"confirmar": "1"})
         self.assertEqual(Orcamento.objects.count(), 1)
+
+    def test_orcamento_grande_nao_lista_todas_as_etapas_na_edicao(self):
+        linhas = [["Item", "Descrição", "Und", "Quant.", "Preço unitário"]]
+        for n in range(1, 81):
+            linhas += [[f"{n:02d}", f"Etapa {n}", None, None, None], [f"{n:02d}.001", f"Item {n}", "m2", 1, 10]]
+        self.enviar(linhas)
+        self.client.post(self.url, {"confirmar": "1"})
+        orc = Orcamento.objects.get()
+        self.assertEqual(orc.etapas.count(), 80)
+        resp = self.client.get(reverse("admin:orcamento_orcamento_change", args=[orc.pk]))
+        self.assertContains(resp, "80 etapas.")
+        self.assertNotContains(resp, 'name="etapas-0-codigo"')
+        # Orçamento pequeno continua com as etapas editáveis na mesma tela.
+        pequeno = Orcamento.objects.create(obra=self.obra, descricao="P", versao=9, data_base=datetime.date.today())
+        Etapa.objects.create(orcamento=pequeno, codigo="1", descricao="E")
+        resp = self.client.get(reverse("admin:orcamento_orcamento_change", args=[pequeno.pk]))
+        self.assertContains(resp, 'name="etapas-0-codigo"')
 
     def test_planilha_com_erro_nao_permite_confirmar(self):
         resp = self.enviar([["Nome", "Valor"]])
