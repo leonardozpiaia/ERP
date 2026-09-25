@@ -92,6 +92,31 @@ class LeituraTests(TestCase):
         self.assertEqual([i.etapa for i in leitura.itens], ["01", "02"])
         self.assertTrue(any("não tem coluna" in a for a in leitura.avisos))
 
+    def test_linha_com_quantidade_e_subitens_e_subtotal(self):
+        leitura = importacao.ler_planilha(planilha([
+            ["Item", "Descrição", "Und", "Quant.", "Preço unitário", "Total"],
+            ["01", "BLOCO A", None, None, None, None],
+            ["01.006", "ALVENARIA", None, None, None, None],
+            ["01.006.001", "ALVENARIA DE VEDAÇÃO", None, None, None, None],
+            ["01.006.001.001", "MATERIAL PARA EXECUÇÃO ALVENARIA", "M2", 442.46, None, None],
+            ["01.006.001.001.001", "ARGAMASSA PRONTA", "UN", 100, 14.9, 1490],
+            ["01.006.001.001.002", "BLOCO CERÂMICO", "UN", 1000, 1.45, 1450],
+            ["01.006.001.002", "MÃO DE OBRA ALVENARIA", "M2", 442.46, 30, 13273.8],
+        ]))
+        self.assertEqual(leitura.erros, [])
+        etapas = {e.codigo: e.pai for e in leitura.etapas}
+        self.assertEqual(etapas["01.006.001.001"], "01.006.001")
+        self.assertEqual(
+            [(i.codigo, i.etapa) for i in leitura.itens],
+            [("01.006.001.001.001", "01.006.001.001"), ("01.006.001.001.002", "01.006.001.001"),
+             ("01.006.001.002", "01.006.001")],
+        )
+        self.assertTrue(any("1 linha(s) com quantidade, mas com subitens" in a for a in leitura.avisos))
+        resumo = {l["etapa"].codigo: l for l in leitura.resumo()}
+        self.assertEqual(resumo["01.006.001.001"]["total"], D("2940.00"))
+        self.assertEqual(resumo["01.006.001.001"]["nivel"], 3)
+        self.assertEqual(resumo["01"]["total"], D("16213.80"))
+
     def test_quantidade_zero_com_total_vira_verba(self):
         leitura = importacao.ler_planilha(planilha([
             ["Item", "Descrição", "Und", "Quant.", "Preço unitário", "Total"],

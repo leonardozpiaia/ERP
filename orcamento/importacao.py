@@ -4,8 +4,10 @@ A planilha pode ter qualquer layout, desde que tenha uma linha de cabeçalho
 com, pelo menos, as colunas de descrição, quantidade e preço unitário. As
 colunas são reconhecidas pelo nome (ex.: "Item", "Descrição", "Und",
 "Quant.", "Preço unitário"). A EAP é montada pela numeração da coluna Item:
-linhas sem quantidade são etapas (1, 1.1...) e linhas com quantidade são
-itens, colocados na etapa de numeração mais próxima (1.1.3 vai para 1.1).
+são etapas as linhas sem quantidade e as linhas que têm linhas filhas na
+numeração (subtotais: 1.2 quando existe 1.2.1); as demais linhas com
+quantidade são itens, colocados na etapa de numeração mais próxima
+(1.1.3 vai para 1.1).
 """
 
 import re
@@ -146,6 +148,8 @@ class Leitura:
 
     def fechar_grupos(self):
         mensagens = {
+            "subtotal": "{n} linha(s) com quantidade, mas com subitens numerados embaixo, viraram etapas "
+                        "(subtotais); o valor delas vem da soma dos subitens",
             "zero": "{n} linha(s) com quantidade zero e sem total foram ignoradas",
             "verba": "{n} linha(s) com quantidade zero, mas com total preenchido, entraram como verba "
                      "(quantidade 1 × o total), somando R$ {valor}",
@@ -276,8 +280,15 @@ def ler_planilha(arquivo):
         indice = colunas.get(campo)
         return linha[indice] if indice is not None and indice < len(linha) else None
 
-    for numero, linha in enumerate(aba.iter_rows(min_row=numero_cabecalho + 1, values_only=True),
-                                   numero_cabecalho + 1):
+    linhas = list(enumerate(aba.iter_rows(min_row=numero_cabecalho + 1, values_only=True), numero_cabecalho + 1))
+    # Numerações que têm linhas "filhas" (1.2 tem 1.2.1): são etapas/subtotais, mesmo com quantidade.
+    com_filhos = set()
+    for _, linha in linhas:
+        partes = ler_codigo(celula(linha, "codigo")).split(".")
+        for tamanho in range(1, len(partes)):
+            com_filhos.add(".".join(partes[:tamanho]))
+
+    for numero, linha in linhas:
         codigo = ler_codigo(celula(linha, "codigo"))
         descricao = ler_texto(celula(linha, "descricao"))
         if celula(linha, "referencia") is not None:
@@ -295,10 +306,12 @@ def ler_planilha(arquivo):
         if not codigo and re.match(r"^(sub)?total|^bdi\b|^valor total", normalizar(descricao)):
             continue  # linha de totalização
 
-        if quantidade is None:
-            # Etapa (título de grupo).
+        if quantidade is None or (codigo and codigo in com_filhos):
+            # Etapa (título de grupo ou subtotal com linhas filhas).
             if not descricao:
                 continue
+            if quantidade is not None:
+                leitura.agrupar("subtotal", numero)
             if not codigo:
                 if "codigo" in colunas:
                     leitura.avisos.append(f"Linha {numero} ignorada: sem item e sem quantidade ({descricao[:60]}).")
