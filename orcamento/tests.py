@@ -9,6 +9,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from cadastros.models import Composicao, ComposicaoItem, Empresa, Insumo, UnidadeMedida
+from config import marca
 from obras.models import Obra
 
 from .models import Etapa, ItemOrcamento, Orcamento
@@ -91,7 +92,7 @@ class TelasTests(TestCase):
         resp = self.client.get(reverse("orcamento:eap", args=[orc.pk]))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Fundações")
-        self.assertContains(resp, "ERP Obras")
+        self.assertContains(resp, marca.NOME)  # cabeçalho do painel na tela própria
 
     def test_telas_do_admin_abrem(self):
         orc = Orcamento.objects.get()

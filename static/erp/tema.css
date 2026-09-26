@@ -1,0 +1,477 @@
+/* Tema do ERP.
+ *
+ * A identidade da empresa fica nas variáveis --marca-* abaixo: para ajustar
+ * as cores e as fontes da marca, altere só este bloco. O restante do arquivo
+ * deriva delas e cobre os modos claro e escuro do painel.
+ */
+
+:root,
+html[data-theme="light"] {
+  /* ---- Marca ------------------------------------------------------------ */
+  --marca-primaria: #1f4e5a;       /* cor principal: cabeçalho, botões */
+  --marca-primaria-forte: #163a43; /* hover / estados ativos */
+  --marca-destaque: #b8894a;       /* detalhes e indicadores */
+  --marca-fonte-titulo: "Manrope", "Segoe UI", Roboto, Arial, sans-serif;
+  --marca-fonte-texto: "Manrope", "Segoe UI", Roboto, Arial, sans-serif;
+
+  /* ---- Superfícies e texto --------------------------------------------- */
+  --erp-fundo: #f4f5f3;
+  --erp-superficie: #ffffff;
+  --erp-superficie-2: #f8f9f7;
+  --erp-linha: #e3e6e2;
+  --erp-texto: #1c2427;
+  --erp-texto-suave: #5f6b6e;
+  --erp-sombra: 0 1px 2px rgba(20, 38, 45, 0.05), 0 4px 16px rgba(20, 38, 45, 0.06);
+  --erp-raio: 12px;
+  --erp-raio-pequeno: 8px;
+  --erp-ok: #2f7d4f;
+  --erp-ok-fundo: #e7f3eb;
+  --erp-atencao: #9a6a00;
+  --erp-atencao-fundo: #fbf1d9;
+  --erp-alerta: #b3261e;
+  --erp-alerta-fundo: #fbe9e7;
+
+  /* ---- Variáveis do painel do Django ------------------------------------ */
+  --primary: var(--marca-primaria);
+  --secondary: var(--marca-primaria);
+  --accent: var(--marca-destaque);
+  --primary-fg: #ffffff;
+  --body-fg: var(--erp-texto);
+  --body-bg: var(--erp-fundo);
+  --body-quiet-color: var(--erp-texto-suave);
+  --body-medium-color: #3a4548;
+  --body-loud-color: #0e1416;
+  --header-color: #ffffff;
+  --header-branding-color: #ffffff;
+  --header-bg: var(--marca-primaria);
+  --header-link-color: #ffffff;
+  --breadcrumbs-fg: var(--erp-texto-suave);
+  --breadcrumbs-link-fg: var(--marca-primaria);
+  --breadcrumbs-bg: var(--erp-superficie);
+  --link-fg: var(--marca-primaria);
+  --link-hover-color: var(--marca-primaria-forte);
+  --link-selected-fg: var(--marca-primaria-forte);
+  --hairline-color: var(--erp-linha);
+  --border-color: #cfd5d2;
+  --error-fg: var(--erp-alerta);
+  --message-success-bg: var(--erp-ok-fundo);
+  --message-warning-bg: var(--erp-atencao-fundo);
+  --message-error-bg: var(--erp-alerta-fundo);
+  --darkened-bg: var(--erp-superficie-2);
+  --selected-bg: #e9eeec;
+  --selected-row: #fff6e0;
+  --button-fg: #ffffff;
+  --button-bg: var(--marca-primaria);
+  --button-hover-bg: var(--marca-primaria-forte);
+  --default-button-bg: var(--marca-primaria-forte);
+  --default-button-hover-bg: var(--marca-primaria);
+  --close-button-bg: #6b7477;
+  --close-button-hover-bg: #3a4548;
+  --object-tools-bg: var(--marca-primaria);
+  --object-tools-hover-bg: var(--marca-primaria-forte);
+  --font-family-primary: var(--marca-fonte-texto);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --marca-primaria: #6fb3c2;
+    --marca-primaria-forte: #93c8d4;
+    --marca-destaque: #d4a868;
+    --erp-fundo: #111719;
+    --erp-superficie: #182124;
+    --erp-superficie-2: #1d272b;
+    --erp-linha: #2a373b;
+    --erp-texto: #e4eaeb;
+    --erp-texto-suave: #9aa8ab;
+    --erp-sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+    --erp-ok: #7ccf9a;
+    --erp-ok-fundo: #193326;
+    --erp-atencao: #e9c46a;
+    --erp-atencao-fundo: #332a12;
+    --erp-alerta: #f28b82;
+    --erp-alerta-fundo: #3a1d1b;
+    --header-bg: #14262d;
+    --primary-fg: #0f1a1d;
+    --button-fg: #0f1a1d;
+    --body-medium-color: #c8d2d4;
+    --body-loud-color: #ffffff;
+    --border-color: #3a484c;
+    --selected-bg: #243034;
+    --selected-row: #2e2a1c;
+  }
+}
+
+html[data-theme="dark"] {
+  --marca-primaria: #6fb3c2;
+  --marca-primaria-forte: #93c8d4;
+  --marca-destaque: #d4a868;
+  --erp-fundo: #111719;
+  --erp-superficie: #182124;
+  --erp-superficie-2: #1d272b;
+  --erp-linha: #2a373b;
+  --erp-texto: #e4eaeb;
+  --erp-texto-suave: #9aa8ab;
+  --erp-sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --erp-ok: #7ccf9a;
+  --erp-ok-fundo: #193326;
+  --erp-atencao: #e9c46a;
+  --erp-atencao-fundo: #332a12;
+  --erp-alerta: #f28b82;
+  --erp-alerta-fundo: #3a1d1b;
+  --header-bg: #14262d;
+  --primary-fg: #0f1a1d;
+  --button-fg: #0f1a1d;
+  --body-medium-color: #c8d2d4;
+  --body-loud-color: #ffffff;
+  --border-color: #3a484c;
+  --selected-bg: #243034;
+  --selected-row: #2e2a1c;
+}
+
+/* ---- Base ---------------------------------------------------------------- */
+
+body {
+  font-family: var(--marca-fonte-texto);
+  font-size: 14px;
+  background: var(--erp-fundo);
+  color: var(--erp-texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, #site-name {
+  font-family: var(--marca-fonte-titulo);
+  letter-spacing: -0.01em;
+}
+
+#content h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 18px; }
+#content h2 { font-size: 1.15rem; font-weight: 700; }
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--marca-destaque);
+  outline-offset: 2px;
+}
+
+/* ---- Cabeçalho ----------------------------------------------------------- */
+
+#header {
+  background: var(--header-bg);
+  padding: 12px 32px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+#branding { display: flex; align-items: center; }
+#site-name { margin: 0; font-size: 1.1rem; font-weight: 700; }
+#site-name a { display: inline-flex; align-items: center; gap: 12px; color: #fff; }
+#site-name .marca-simbolo {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+#site-name .marca-nome { display: flex; flex-direction: column; line-height: 1.15; }
+#site-name .marca-nome small { font-size: 0.72rem; font-weight: 500; opacity: 0.75; letter-spacing: 0.02em; }
+
+#user-tools { font-size: 0.8rem; text-transform: none; letter-spacing: 0; }
+#user-tools a, #logout-form button { border-bottom: none; opacity: 0.9; }
+#user-tools a:hover, #logout-form button:hover { opacity: 1; text-decoration: underline; }
+
+div.breadcrumbs {
+  background: var(--breadcrumbs-bg);
+  border-bottom: 1px solid var(--erp-linha);
+  padding: 10px 32px;
+  font-size: 0.82rem;
+}
+div.breadcrumbs a { color: var(--breadcrumbs-link-fg); }
+
+#content { padding: 28px 32px; }
+
+/* ---- Menu lateral -------------------------------------------------------- */
+
+#nav-sidebar { background: var(--erp-superficie); border-right: 1px solid var(--erp-linha); }
+#nav-sidebar .module caption,
+#nav-sidebar .module caption a {
+  background: transparent;
+  color: var(--erp-texto-suave);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+#nav-sidebar .current-model { background: var(--selected-bg); }
+#nav-filter { border-radius: var(--erp-raio-pequeno); }
+.toggle-nav-sidebar { background: var(--erp-superficie); border-color: var(--erp-linha); }
+
+/* ---- Cartões (módulos) --------------------------------------------------- */
+
+.module {
+  background: var(--erp-superficie);
+  border: 1px solid var(--erp-linha);
+  border-radius: var(--erp-raio);
+  box-shadow: var(--erp-sombra);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.module h2, .module caption, .inline-group h2 {
+  background: var(--erp-superficie);
+  color: var(--erp-texto);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--erp-linha);
+}
+.module caption a.section { color: var(--erp-texto); }
+.module h2 + .description, .module .description { color: var(--erp-texto-suave); }
+
+fieldset.module { padding: 0; }
+.aligned .form-row, .form-row { padding: 14px 16px; border-bottom-color: var(--erp-linha); }
+
+/* ---- Tabelas ------------------------------------------------------------- */
+
+table { border-color: var(--erp-linha); }
+thead th, tfoot td {
+  background: var(--erp-superficie-2);
+  color: var(--erp-texto-suave);
+  border-bottom: 1px solid var(--erp-linha);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+td, th { border-bottom-color: var(--erp-linha); padding: 10px 12px; }
+tbody tr:hover td, tbody tr:hover th { background: var(--selected-bg); }
+tr:nth-child(odd), .row-form-errors { background: var(--erp-superficie); }
+tr:nth-child(even) { background: var(--erp-superficie-2); }
+td.num, th.num { font-variant-numeric: tabular-nums; }
+
+#changelist .results, #changelist table { border-radius: var(--erp-raio); }
+#changelist { background: transparent; }
+#changelist .toplinks, #changelist .actions, #changelist #toolbar, #changelist .paginator {
+  background: var(--erp-superficie);
+  border-color: var(--erp-linha);
+}
+#changelist #toolbar { border-radius: var(--erp-raio) var(--erp-raio) 0 0; padding: 12px 16px; }
+#changelist .paginator { border-radius: 0 0 var(--erp-raio) var(--erp-raio); }
+#changelist-filter {
+  background: var(--erp-superficie);
+  border: 1px solid var(--erp-linha);
+  border-radius: var(--erp-raio);
+  box-shadow: var(--erp-sombra);
+  overflow: hidden;
+}
+#changelist-filter h2 { background: var(--erp-superficie); color: var(--erp-texto); border-bottom: 1px solid var(--erp-linha); }
+#changelist-filter li.selected a { color: var(--marca-primaria); font-weight: 700; }
+
+/* ---- Campos e botões ----------------------------------------------------- */
+
+input[type=text], input[type=password], input[type=email], input[type=url], input[type=number],
+input[type=tel], input[type=search], input[type=date], textarea, select, .vTextField {
+  border: 1px solid var(--border-color);
+  border-radius: var(--erp-raio-pequeno);
+  padding: 8px 10px;
+  background: var(--erp-superficie);
+  color: var(--erp-texto);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+select { padding-right: 28px; height: auto; }
+input:focus, textarea:focus, select:focus {
+  border-color: var(--marca-primaria);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--marca-primaria) 18%, transparent);
+}
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button, button.button {
+  border-radius: var(--erp-raio-pequeno);
+  padding: 9px 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.button:active, input[type=submit]:active { transform: translateY(1px); }
+
+.object-tools a:link, .object-tools a:visited {
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.submit-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: color-mix(in srgb, var(--erp-superficie) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--erp-linha);
+  border-radius: var(--erp-raio);
+  box-shadow: 0 -2px 12px rgba(20, 38, 45, 0.06);
+  padding: 12px 16px;
+}
+.submit-row a.deletelink { border-radius: var(--erp-raio-pequeno); }
+
+/* ---- Mensagens ----------------------------------------------------------- */
+
+ul.messagelist li {
+  border-radius: var(--erp-raio-pequeno);
+  margin: 0 0 8px;
+  padding: 12px 16px 12px 44px;
+  background-position: 16px 13px;
+  color: var(--erp-texto);
+  font-size: 0.88rem;
+}
+ul.messagelist { padding: 16px 32px 0; }
+.errornote { border-radius: var(--erp-raio-pequeno); }
+
+/* ---- Painel inicial ------------------------------------------------------ */
+
+.painel-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-bottom: 20px;
+}
+.painel-cabecalho h1 { margin: 0 !important; }
+.painel-cabecalho .data { color: var(--erp-texto-suave); font-size: 0.9rem; }
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+a.indicador {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--erp-superficie);
+  border: 1px solid var(--erp-linha);
+  border-radius: var(--erp-raio);
+  box-shadow: var(--erp-sombra);
+  color: var(--erp-texto);
+  text-decoration: none;
+  border-top: 4px solid var(--erp-linha);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+a.indicador:hover { transform: translateY(-2px); color: var(--erp-texto); text-decoration: none; }
+a.indicador .titulo { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--erp-texto-suave); }
+a.indicador .valor { font-family: var(--marca-fonte-titulo); font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+a.indicador .detalhe { font-size: 0.8rem; color: var(--erp-texto-suave); }
+a.indicador.alerta { border-top-color: var(--erp-alerta); }
+a.indicador.alerta .valor { color: var(--erp-alerta); }
+a.indicador.atencao { border-top-color: var(--erp-atencao); }
+a.indicador.ok { border-top-color: var(--erp-ok); }
+a.indicador.neutro { border-top-color: var(--marca-destaque); }
+
+.painel-secao-titulo {
+  font-size: 0.78rem !important;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--erp-texto-suave);
+  margin: 0 0 12px;
+}
+
+.atalhos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+a.atalho {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--erp-superficie);
+  border: 1px solid var(--erp-linha);
+  border-radius: var(--erp-raio);
+  color: var(--erp-texto);
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+a.atalho:hover { border-color: var(--marca-primaria); background: var(--selected-bg); color: var(--erp-texto); text-decoration: none; }
+a.atalho svg { flex: none; width: 22px; height: 22px; color: var(--marca-primaria); }
+
+.painel-modulos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.painel-modulos .module { margin: 0; }
+.painel-modulos .module table { width: 100%; }
+.painel-modulos .module th { font-weight: 600; }
+.painel-modulos .module td { width: 1%; white-space: nowrap; }
+
+/* A área "Ações recentes" some do painel: os indicadores ocupam a largura toda. */
+.dashboard #content { width: auto; }
+.dashboard #content-related { display: none; }
+
+/* ---- Login --------------------------------------------------------------- */
+
+body.login {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--marca-primaria) 35%, transparent), transparent),
+    var(--erp-fundo);
+}
+body.login #container {
+  border-radius: 16px;
+  border: 1px solid var(--erp-linha);
+  box-shadow: 0 20px 60px rgba(20, 38, 45, 0.18);
+  overflow: hidden;
+  margin-top: 10vh;
+  background: var(--erp-superficie);
+}
+body.login #header { padding: 22px 28px; }
+body.login #content { padding: 24px 28px 28px; }
+body.login .submit-row { position: static; border: none; box-shadow: none; background: none; padding: 8px 0 0; }
+body.login .submit-row input { width: 100%; padding: 12px; }
+body.login .login-rodape { margin-top: 16px; text-align: center; color: var(--erp-texto-suave); font-size: 0.78rem; }
+
+/* ---- Celular ------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  #header, div.breadcrumbs, #content, ul.messagelist { padding-left: 16px; padding-right: 16px; }
+  .indicadores { grid-template-columns: 1fr 1fr; }
+  a.indicador .valor { font-size: 1.2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* ---- Ajustes de precedência sobre o CSS padrão do Django ---------------- */
+
+#site-name a:link, #site-name a:visited, #site-name a:hover { color: #ffffff; text-decoration: none; }
+#logout-form button { text-transform: none; letter-spacing: 0; font-size: 0.8rem; }
+
+/* Painel inicial ocupa a largura toda (sem a coluna de ações recentes). */
+.dashboard .colMS { margin-right: 0; }
+.dashboard #content-main { float: none; width: auto; }
+
+/* A lista em si não é um cartão: os cartões são a barra de busca, a tabela e o filtro. */
+#changelist.module {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+#changelist .results { overflow-x: auto; background: var(--erp-superficie); border: 1px solid var(--erp-linha); }
+
+/* Listas mais compactas, para caber sem rolagem lateral. */
+#changelist table td, #changelist table th { padding: 9px 10px; }
+#changelist-filter { flex: 0 0 220px; }
+
+/* Cartões de módulos: nomes sem quebra no meio da palavra. */
+.painel-modulos { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.painel-modulos .module th { width: 100%; overflow-wrap: normal; word-break: normal; hyphens: manual; }

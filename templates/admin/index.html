@@ -1,40 +1,68 @@
 {% extends "admin/index.html" %}
 
+{% block content_title %}{% endblock %}
+
 {% block content %}
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="i-planilha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+  <symbol id="i-predio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l8-2v18M12 7l8 2v12M3 21h18M8 8h.01M8 12h.01M8 16h.01M16 12h.01M16 16h.01"/></symbol>
+  <symbol id="i-caixa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/></symbol>
+  <symbol id="i-pagar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 12h.01M17 12h.01"/></symbol>
+  <symbol id="i-receber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></symbol>
+  <symbol id="i-medicao" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17L17 3l4 4L7 21H3z"/><path d="M13 7l2 2M10 10l2 2M7 13l2 2"/></symbol>
+  <symbol id="i-carrinho" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></symbol>
+  <symbol id="i-eap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="4" rx="1"/><rect x="3" y="17" width="6" height="4" rx="1"/><rect x="15" y="17" width="6" height="4" rx="1"/><path d="M12 7v5M6 17v-3h12v3"/></symbol>
+</svg>
+
 <div id="content-main">
-  {% if perms.orcamento.add_orcamento %}
-  <div class="app-atalhos module">
-    <table style="width: 100%">
-      <caption><span class="section">Atalhos</span></caption>
-      <tr><th scope="row"><a href="{% url 'orcamento:importar' %}">Importar orçamento de planilha (Excel)</a></th></tr>
-    </table>
+  <div class="painel-cabecalho">
+    <h1>{{ saudacao }}{% if user.first_name %}, {{ user.first_name }}{% endif %}</h1>
+    <span class="data">{{ hoje|date:"l, d \d\e F \d\e Y"|capfirst }}</span>
   </div>
+
+  {% if indicadores %}
+  <section class="indicadores" aria-label="Indicadores">
+    {% for c in indicadores %}
+    <a class="indicador {{ c.estado }}" href="{{ c.url }}">
+      <span class="titulo">{{ c.titulo }}</span>
+      <span class="valor">{{ c.valor }}</span>
+      <span class="detalhe">{{ c.detalhe }}</span>
+    </a>
+    {% endfor %}
+  </section>
   {% endif %}
-  {% if perms.comercial.view_unidade or perms.financeiro.view_titulopagar or perms.financeiro.view_parcelareceber or perms.contratos.view_medicao or perms.orcamento.view_orcamento %}
-  <div class="app-relatorios module">
-    <table style="width: 100%">
-      <caption><span class="section">Relatórios</span></caption>
-      {% if perms.comercial.view_unidade %}
-      <tr><th scope="row"><a href="{% url 'comercial:espelho' %}">Espelho de vendas</a></th></tr>
-      {% endif %}
-      {% if perms.financeiro.view_titulopagar %}
-      <tr><th scope="row"><a href="{% url 'financeiro:fluxo_caixa' %}">Fluxo de caixa</a></th></tr>
-      {% endif %}
-      {% if perms.financeiro.view_parcelapagar %}
-      <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelapagar_changelist' %}?situacao=vencidas">Contas a pagar vencidas</a></th></tr>
-      {% endif %}
-      {% if perms.financeiro.view_parcelareceber %}
-      <tr><th scope="row"><a href="{% url 'admin:financeiro_parcelareceber_changelist' %}?situacao=vencidas">Contas a receber vencidas</a></th></tr>
-      {% endif %}
-      {% if perms.contratos.view_medicao %}
-      <tr><th scope="row"><a href="{% url 'contratos:retencoes' %}">Retenções de medições (INSS / ISS / caução)</a></th></tr>
-      {% endif %}
-      {% if perms.orcamento.view_orcamento %}
-      <tr><th scope="row"><a href="{% url 'admin:orcamento_orcamento_changelist' %}">EAP e orçado × realizado (abra o orçamento)</a></th></tr>
-      {% endif %}
-    </table>
+
+  <h2 class="painel-secao-titulo">Atalhos e relatórios</h2>
+  <nav class="atalhos" aria-label="Atalhos">
+    {% if perms.suprimentos.add_solicitacaocompra %}
+    <a class="atalho" href="{% url 'admin:suprimentos_solicitacaocompra_add' %}"><svg><use href="#i-carrinho"/></svg>Nova solicitação de compra</a>
+    {% endif %}
+    {% if perms.orcamento.add_orcamento %}
+    <a class="atalho" href="{% url 'orcamento:importar' %}"><svg><use href="#i-planilha"/></svg>Importar orçamento de planilha (Excel)</a>
+    {% endif %}
+    {% if perms.orcamento.view_orcamento %}
+    <a class="atalho" href="{% url 'admin:orcamento_orcamento_changelist' %}"><svg><use href="#i-eap"/></svg>EAP e orçado × realizado</a>
+    {% endif %}
+    {% if perms.financeiro.view_parcelapagar %}
+    <a class="atalho" href="{% url 'admin:financeiro_parcelapagar_changelist' %}?situacao=vencidas"><svg><use href="#i-pagar"/></svg>Contas a pagar vencidas</a>
+    {% endif %}
+    {% if perms.financeiro.view_parcelareceber %}
+    <a class="atalho" href="{% url 'admin:financeiro_parcelareceber_changelist' %}?situacao=vencidas"><svg><use href="#i-receber"/></svg>Contas a receber vencidas</a>
+    {% endif %}
+    {% if perms.financeiro.view_titulopagar %}
+    <a class="atalho" href="{% url 'financeiro:fluxo_caixa' %}"><svg><use href="#i-caixa"/></svg>Fluxo de caixa</a>
+    {% endif %}
+    {% if perms.comercial.view_unidade %}
+    <a class="atalho" href="{% url 'comercial:espelho' %}"><svg><use href="#i-predio"/></svg>Espelho de vendas</a>
+    {% endif %}
+    {% if perms.contratos.view_medicao %}
+    <a class="atalho" href="{% url 'contratos:retencoes' %}"><svg><use href="#i-medicao"/></svg>Retenções de medições (INSS / ISS / caução)</a>
+    {% endif %}
+  </nav>
+
+  <h2 class="painel-secao-titulo">Módulos</h2>
+  <div class="painel-modulos">
+    {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
   </div>
-  {% endif %}
-  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
 </div>
 {% endblock %}

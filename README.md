@@ -205,6 +205,16 @@ para a pasta nova.
 > Isto é só para teste: o usuário `admin`/`admin` e o banco em arquivo não
 > são seguros para uso real. Para a equipe usar, veja [DEPLOY.md](DEPLOY.md).
 
+## Visual e identidade da empresa
+
+- Nome, iniciais e slogan da empresa ficam em `config/marca.py`.
+- Cores e fontes ficam no bloco `--marca-*` no topo de `static/erp/tema.css`
+  (modos claro e escuro); o resto do visual deriva delas.
+- A página inicial mostra saudação, indicadores do dia (contas vencidas e a
+  vencer, saldo em bancos, aprovações pendentes, unidades vendidas), atalhos e
+  os módulos. Cada pessoa vê só o que o perfil permite.
+- Datas no formato curto (16/09/2026) em todas as telas.
+
 ## Como rodar localmente (desenvolvedores)
 
 Pré-requisito: Python 3.11 ou mais novo.

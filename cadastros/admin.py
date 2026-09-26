@@ -2,9 +2,6 @@ from django.contrib import admin
 
 from .models import Cliente, Composicao, ComposicaoItem, Empresa, Fornecedor, Insumo, UnidadeMedida
 
-admin.site.site_header = "ERP Obras"
-admin.site.site_title = "ERP Obras"
-admin.site.index_title = "Painel"
 
 
 @admin.register(Empresa)
