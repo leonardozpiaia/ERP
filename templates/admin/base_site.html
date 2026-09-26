@@ -3,17 +3,17 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="icon" type="image/png" href="{% static 'erp/marca/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'erp/marca/icone-180.png' %}">
+<meta name="theme-color" content="#4e574b">
 <link rel="stylesheet" href="{% static 'erp/tema.css' %}">
 {% endblock %}
 
 {% block branding %}
 <div id="site-name">
   <a href="{% url 'admin:index' %}">
-    <span class="marca-simbolo" aria-hidden="true">{{ marca.INICIAIS }}</span>
-    <span class="marca-nome">{{ marca.NOME }}<small>{{ marca.SISTEMA }} · versão {{ versao_erp }}</small></span>
+    <img class="marca-simbolo" src="{% static 'erp/marca/simbolo.png' %}" alt="" width="38" height="38">
+    <span class="marca-nome"><span class="marca-nome-texto">{{ marca.NOME }}</span><small>{{ marca.SISTEMA }} · versão {{ versao_erp }}</small></span>
   </a>
 </div>
 {% if user.is_anonymous %}

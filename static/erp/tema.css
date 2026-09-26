@@ -5,23 +5,32 @@
  * deriva delas e cobre os modos claro e escuro do painel.
  */
 
+/* Fontes da marca, servidas pelo próprio ERP (licença livre OFL, em fontes/). */
+@font-face { font-family: "Figtree"; font-weight: 400; font-style: normal; font-display: swap; src: url("fontes/figtree-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-weight: 500; font-style: normal; font-display: swap; src: url("fontes/figtree-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-weight: 600; font-style: normal; font-display: swap; src: url("fontes/figtree-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Figtree"; font-weight: 700; font-style: normal; font-display: swap; src: url("fontes/figtree-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Instrument Serif"; font-weight: 400; font-style: normal; font-display: swap; src: url("fontes/instrument-serif-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Instrument Serif"; font-weight: 400; font-style: italic; font-display: swap; src: url("fontes/instrument-serif-latin-400-italic.woff2") format("woff2"); }
+
 :root,
 html[data-theme="light"] {
   /* ---- Marca ------------------------------------------------------------ */
-  --marca-primaria: #1f4e5a;       /* cor principal: cabeçalho, botões */
-  --marca-primaria-forte: #163a43; /* hover / estados ativos */
-  --marca-destaque: #b8894a;       /* detalhes e indicadores */
-  --marca-fonte-titulo: "Manrope", "Segoe UI", Roboto, Arial, sans-serif;
-  --marca-fonte-texto: "Manrope", "Segoe UI", Roboto, Arial, sans-serif;
+  --marca-primaria: #4e574b;       /* verde-oliva da marca: cabeçalho, botões */
+  --marca-primaria-forte: #3a4238; /* hover / estados ativos */
+  --marca-destaque: #d9d859;       /* amarelo-limão do logotipo (usar sobre o verde) */
+  --marca-sobre-primaria: #d9d859; /* texto de destaque sobre o verde */
+  --marca-fonte-titulo: "Instrument Serif", Georgia, "Times New Roman", serif; /* títulos em itálico, como no site */
+  --marca-fonte-texto: "Figtree", "Segoe UI", Roboto, Arial, sans-serif;
 
   /* ---- Superfícies e texto --------------------------------------------- */
-  --erp-fundo: #f4f5f3;
+  --erp-fundo: #f3f3ee;
   --erp-superficie: #ffffff;
-  --erp-superficie-2: #f8f9f7;
-  --erp-linha: #e3e6e2;
-  --erp-texto: #1c2427;
-  --erp-texto-suave: #5f6b6e;
-  --erp-sombra: 0 1px 2px rgba(20, 38, 45, 0.05), 0 4px 16px rgba(20, 38, 45, 0.06);
+  --erp-superficie-2: #f8f8f4;
+  --erp-linha: #e2e3da;
+  --erp-texto: #20241f;
+  --erp-texto-suave: #62685f;
+  --erp-sombra: 0 1px 2px rgba(40, 46, 38, 0.05), 0 4px 16px rgba(40, 46, 38, 0.06);
   --erp-raio: 12px;
   --erp-raio-pequeno: 8px;
   --erp-ok: #2f7d4f;
@@ -39,8 +48,8 @@ html[data-theme="light"] {
   --body-fg: var(--erp-texto);
   --body-bg: var(--erp-fundo);
   --body-quiet-color: var(--erp-texto-suave);
-  --body-medium-color: #3a4548;
-  --body-loud-color: #0e1416;
+  --body-medium-color: #3c4239;
+  --body-loud-color: #121510;
   --header-color: #ffffff;
   --header-branding-color: #ffffff;
   --header-bg: var(--marca-primaria);
@@ -52,21 +61,21 @@ html[data-theme="light"] {
   --link-hover-color: var(--marca-primaria-forte);
   --link-selected-fg: var(--marca-primaria-forte);
   --hairline-color: var(--erp-linha);
-  --border-color: #cfd5d2;
+  --border-color: #cfd1c6;
   --error-fg: var(--erp-alerta);
   --message-success-bg: var(--erp-ok-fundo);
   --message-warning-bg: var(--erp-atencao-fundo);
   --message-error-bg: var(--erp-alerta-fundo);
   --darkened-bg: var(--erp-superficie-2);
-  --selected-bg: #e9eeec;
-  --selected-row: #fff6e0;
+  --selected-bg: #ebede4;
+  --selected-row: #f6f6d2;
   --button-fg: #ffffff;
   --button-bg: var(--marca-primaria);
   --button-hover-bg: var(--marca-primaria-forte);
-  --default-button-bg: var(--marca-primaria-forte);
-  --default-button-hover-bg: var(--marca-primaria);
-  --close-button-bg: #6b7477;
-  --close-button-hover-bg: #3a4548;
+  --default-button-bg: var(--marca-primaria);
+  --default-button-hover-bg: var(--marca-primaria-forte);
+  --close-button-bg: #6f756b;
+  --close-button-hover-bg: #3c4239;
   --object-tools-bg: var(--marca-primaria);
   --object-tools-hover-bg: var(--marca-primaria-forte);
   --font-family-primary: var(--marca-fonte-texto);
@@ -74,58 +83,58 @@ html[data-theme="light"] {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --marca-primaria: #6fb3c2;
-    --marca-primaria-forte: #93c8d4;
-    --marca-destaque: #d4a868;
-    --erp-fundo: #111719;
-    --erp-superficie: #182124;
-    --erp-superficie-2: #1d272b;
-    --erp-linha: #2a373b;
-    --erp-texto: #e4eaeb;
-    --erp-texto-suave: #9aa8ab;
+    --marca-primaria: #d9d859;
+    --marca-primaria-forte: #e8e78a;
+    --marca-destaque: #d9d859;
+    --erp-fundo: #171a16;
+    --erp-superficie: #1f231e;
+    --erp-superficie-2: #252a24;
+    --erp-linha: #323830;
+    --erp-texto: #e8e9e2;
+    --erp-texto-suave: #a3a89c;
     --erp-sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
-    --erp-ok: #7ccf9a;
-    --erp-ok-fundo: #193326;
+    --erp-ok: #8fd19e;
+    --erp-ok-fundo: #1c3322;
     --erp-atencao: #e9c46a;
     --erp-atencao-fundo: #332a12;
     --erp-alerta: #f28b82;
     --erp-alerta-fundo: #3a1d1b;
-    --header-bg: #14262d;
-    --primary-fg: #0f1a1d;
-    --button-fg: #0f1a1d;
-    --body-medium-color: #c8d2d4;
+    --header-bg: #3a4238;
+    --primary-fg: #1b1f1a;
+    --button-fg: #1b1f1a;
+    --body-medium-color: #cdd0c6;
     --body-loud-color: #ffffff;
-    --border-color: #3a484c;
-    --selected-bg: #243034;
-    --selected-row: #2e2a1c;
+    --border-color: #454c42;
+    --selected-bg: #2b3129;
+    --selected-row: #2f2f1c;
   }
 }
 
 html[data-theme="dark"] {
-  --marca-primaria: #6fb3c2;
-  --marca-primaria-forte: #93c8d4;
-  --marca-destaque: #d4a868;
-  --erp-fundo: #111719;
-  --erp-superficie: #182124;
-  --erp-superficie-2: #1d272b;
-  --erp-linha: #2a373b;
-  --erp-texto: #e4eaeb;
-  --erp-texto-suave: #9aa8ab;
+  --marca-primaria: #d9d859;
+  --marca-primaria-forte: #e8e78a;
+  --marca-destaque: #d9d859;
+  --erp-fundo: #171a16;
+  --erp-superficie: #1f231e;
+  --erp-superficie-2: #252a24;
+  --erp-linha: #323830;
+  --erp-texto: #e8e9e2;
+  --erp-texto-suave: #a3a89c;
   --erp-sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
-  --erp-ok: #7ccf9a;
-  --erp-ok-fundo: #193326;
+  --erp-ok: #8fd19e;
+  --erp-ok-fundo: #1c3322;
   --erp-atencao: #e9c46a;
   --erp-atencao-fundo: #332a12;
   --erp-alerta: #f28b82;
   --erp-alerta-fundo: #3a1d1b;
-  --header-bg: #14262d;
-  --primary-fg: #0f1a1d;
-  --button-fg: #0f1a1d;
-  --body-medium-color: #c8d2d4;
+  --header-bg: #3a4238;
+  --primary-fg: #1b1f1a;
+  --button-fg: #1b1f1a;
+  --body-medium-color: #cdd0c6;
   --body-loud-color: #ffffff;
-  --border-color: #3a484c;
-  --selected-bg: #243034;
-  --selected-row: #2e2a1c;
+  --border-color: #454c42;
+  --selected-bg: #2b3129;
+  --selected-row: #2f2f1c;
 }
 
 /* ---- Base ---------------------------------------------------------------- */
@@ -138,16 +147,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, #site-name {
+/* Títulos de página no itálico serifado do site; o resto no texto sem serifa. */
+#content h1, .marca-nome-texto {
   font-family: var(--marca-fonte-titulo);
-  letter-spacing: -0.01em;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
 }
+h2, h3 { font-family: var(--marca-fonte-texto); letter-spacing: -0.01em; }
 
-#content h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 18px; }
+#content h1 { font-size: 2.1rem; line-height: 1.1; margin-bottom: 18px; color: var(--marca-primaria); }
 #content h2 { font-size: 1.15rem; font-weight: 700; }
 
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid var(--marca-destaque);
+  outline: 2px solid var(--marca-primaria);
   outline-offset: 2px;
 }
 
@@ -162,20 +175,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 #branding { display: flex; align-items: center; }
 #site-name { margin: 0; font-size: 1.1rem; font-weight: 700; }
 #site-name a { display: inline-flex; align-items: center; gap: 12px; color: #fff; }
-#site-name .marca-simbolo {
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+#site-name .marca-simbolo { display: block; width: 38px; height: 38px; }
+#site-name .marca-nome { display: flex; flex-direction: column; line-height: 1.05; }
+#site-name .marca-nome-texto { font-size: 1.6rem; color: var(--marca-sobre-primaria); }
+#site-name .marca-nome small {
+  font-family: var(--marca-fonte-texto);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #ffffff;
+  opacity: 0.8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
-#site-name .marca-nome { display: flex; flex-direction: column; line-height: 1.15; }
-#site-name .marca-nome small { font-size: 0.72rem; font-weight: 500; opacity: 0.75; letter-spacing: 0.02em; }
 
 #user-tools { font-size: 0.8rem; text-transform: none; letter-spacing: 0; }
 #user-tools a, #logout-form button { border-bottom: none; opacity: 0.9; }
@@ -362,7 +373,7 @@ a.indicador {
 }
 a.indicador:hover { transform: translateY(-2px); color: var(--erp-texto); text-decoration: none; }
 a.indicador .titulo { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--erp-texto-suave); }
-a.indicador .valor { font-family: var(--marca-fonte-titulo); font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+a.indicador .valor { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 a.indicador .detalhe { font-size: 0.8rem; color: var(--erp-texto-suave); }
 a.indicador.alerta { border-top-color: var(--erp-alerta); }
 a.indicador.alerta .valor { color: var(--erp-alerta); }
@@ -419,24 +430,31 @@ a.atalho svg { flex: none; width: 22px; height: 22px; color: var(--marca-primari
 
 /* ---- Login --------------------------------------------------------------- */
 
-body.login {
-  background:
-    radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--marca-primaria) 35%, transparent), transparent),
-    var(--erp-fundo);
-}
+body.login { background: #4e574b; }
+body.login #header { background: transparent; box-shadow: none; }
+body.login #site-name a { flex-direction: column; gap: 14px; }
+body.login #site-name .marca-simbolo { width: 72px; height: 72px; }
+body.login #site-name .marca-nome { align-items: center; }
+body.login #site-name .marca-nome-texto { font-size: 2.2rem; }
+body.login #branding { justify-content: center; text-align: center; }
 body.login #container {
   border-radius: 16px;
-  border: 1px solid var(--erp-linha);
-  box-shadow: 0 20px 60px rgba(20, 38, 45, 0.18);
-  overflow: hidden;
-  margin-top: 10vh;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+  margin-top: 8vh;
+  background: transparent;
+}
+body.login #content {
   background: var(--erp-superficie);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 body.login #header { padding: 22px 28px; }
 body.login #content { padding: 24px 28px 28px; }
 body.login .submit-row { position: static; border: none; box-shadow: none; background: none; padding: 8px 0 0; }
 body.login .submit-row input { width: 100%; padding: 12px; }
-body.login .login-rodape { margin-top: 16px; text-align: center; color: var(--erp-texto-suave); font-size: 0.78rem; }
+body.login .login-rodape { margin: 16px 0 0; text-align: center; color: var(--erp-texto-suave); font-size: 0.78rem; }
 
 /* ---- Celular ------------------------------------------------------------- */
 
@@ -475,3 +493,36 @@ body.login .login-rodape { margin-top: 16px; text-align: center; color: var(--er
 /* Cartões de módulos: nomes sem quebra no meio da palavra. */
 .painel-modulos { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
 .painel-modulos .module th { width: 100%; overflow-wrap: normal; word-break: normal; hyphens: manual; }
+
+/* ---- Detalhes da marca --------------------------------------------------- */
+
+/* Linha fina amarelo-limão sob o cabeçalho, como o traço do logotipo. */
+#header { border-bottom: 3px solid var(--marca-destaque); }
+body.login #header { border-bottom: none; }
+
+/* Saudação do painel no itálico da marca. */
+.painel-cabecalho h1 { font-size: 2.4rem !important; }
+
+/* Botão principal (Salvar) em verde com texto limão, como o site. */
+body .submit-row input.default, body input[type=submit].default {
+  background: var(--marca-primaria);
+  color: var(--marca-sobre-primaria);
+  text-transform: none;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+body .submit-row input.default:hover, body input[type=submit].default:hover { background: var(--marca-primaria-forte); }
+
+/* Menu lateral: item atual marcado com o verde da marca. */
+#nav-sidebar .current-app .section:link, #nav-sidebar .current-app .section:visited { color: var(--marca-primaria); }
+#nav-sidebar .current-model { background: var(--selected-bg); box-shadow: inset 3px 0 0 var(--marca-primaria); }
+
+/* No escuro o verde vira fundo e o limão vira a cor de ação. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .submit-row input.default { color: #1b1f1a; }
+}
+html[data-theme="dark"] .submit-row input.default { color: #1b1f1a; }
+
+/* Login: sem a linha da versão (fica no rodapé) e o botão de tema no canto. */
+body.login #site-name .marca-nome small { display: none; }
+body.login .theme-toggle { position: fixed; top: 20px; right: 24px; }
