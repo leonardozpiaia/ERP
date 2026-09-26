@@ -140,6 +140,10 @@ STORAGES = {
     },
 }
 
+# Anexos (notas fiscais...). Não são públicos: o endereço /anexos/ confere login e permissão.
+MEDIA_ROOT = Path(os.environ.get("ERP_ANEXOS_DIR", BASE_DIR / "media"))
+MEDIA_URL = "/anexos/"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Etapas de orçamento com muitos itens geram formulários grandes; o padrão (1.000 campos) é pouco.

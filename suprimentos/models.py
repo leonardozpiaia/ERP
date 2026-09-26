@@ -14,6 +14,7 @@ from django.db import models
 from django.db.models import F, Sum
 
 from cadastros.models import Fornecedor, Insumo
+from config.anexos import caminho_nota, validar_extensao_nota, validar_tamanho
 from financeiro.condicao import CondicaoInvalida
 from financeiro.condicao import interpretar as interpretar_condicao
 from obras.models import Obra
@@ -369,6 +370,14 @@ class Recebimento(models.Model):
     )
     data = models.DateField("data", default=datetime.date.today)
     numero_nota = models.CharField("nº da nota fiscal", max_length=30, blank=True)
+    arquivo_nota = models.FileField(
+        "arquivo da nota fiscal",
+        upload_to=caminho_nota,
+        blank=True,
+        max_length=255,
+        validators=[validar_extensao_nota, validar_tamanho],
+        help_text="PDF, XML, JPG ou PNG, até 10 MB. Pode ser anexado depois.",
+    )
     observacao = models.TextField("observação", blank=True)
 
     class Meta:
@@ -409,6 +418,9 @@ class ItemRecebimento(models.Model):
     class Meta:
         verbose_name = "item recebido"
         verbose_name_plural = "itens recebidos"
+
+    def __str__(self):
+        return f"{self.item_pedido.insumo} - {formatar_quantidade(self.quantidade)} {self.item_pedido.insumo.unidade}"
 
     def clean(self):
         recebimento = pai(self, "recebimento")

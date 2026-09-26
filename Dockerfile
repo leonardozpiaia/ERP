@@ -15,6 +15,7 @@ COPY . .
 # Arquivos de estilo do painel, gerados na construção da imagem.
 RUN DJANGO_SECRET_KEY=somente-para-o-build python manage.py collectstatic --noinput \
     && useradd --create-home --uid 1000 erp \
+    && mkdir -p /app/media && chown erp /app/media \
     && chmod +x deploy/iniciar.sh
 
 USER erp

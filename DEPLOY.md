@@ -121,6 +121,14 @@ pode fazer, altere `config/perfis.py`.
   for perdido, eles vão junto. Por isso ative os snapshots do provedor e,
   de tempos em tempos, baixe uma cópia para outro lugar:
   `scp root@IP-DO-SERVIDOR:/opt/erp/backups/erp-*.dump .`
+- Junto com cada backup do banco é gerado o arquivo dos **anexos** (notas
+  fiscais): `erp-AAAA-MM-DD_HHMM-anexos.tar.gz`. Para restaurá-los:
+
+  ```bash
+  docker compose run --rm -v "$PWD/backups:/b" --entrypoint sh web \
+    -c 'tar -xzf /b/erp-AAAA-MM-DD_HHMM-anexos.tar.gz -C /app/media'
+  ```
+
 - Para **restaurar** um backup (substitui todos os dados atuais):
 
   ```bash

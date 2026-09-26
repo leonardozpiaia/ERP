@@ -69,7 +69,10 @@ Solicitação ──aprovar──▶ Cotação ──mapa de cotação──▶ 
 3. **Pedidos**: no mapa, *"Salvar e gerar pedidos pelo menor preço"* cria um
    pedido por fornecedor e obra, em rascunho. Revise e aprove.
 4. **Recebimento**: no pedido aprovado, use *"Registrar recebimento"*. Os
-   itens com saldo já aparecem listados; basta digitar o que chegou. O pedido
+   itens com saldo já aparecem listados; basta digitar o que chegou. O
+   **arquivo da nota fiscal** (PDF, XML, JPG ou PNG, até 10 MB) pode ser
+   anexado na hora ou depois, e fica acessível pelo recebimento e pela conta
+   a pagar gerada, só para quem tem permissão de ver recebimentos. O pedido
    passa a *entregue parcialmente* ou *entregue* sozinho, e não é possível
    receber mais do que foi pedido.
 
@@ -191,8 +194,9 @@ O sistema já vem com os dados de exemplo (obra "Residencial Exemplo"). Para
 começar do zero, apague o arquivo `db.sqlite3` da pasta e rode o
 iniciador com a opção `limpo` (no Windows: `iniciar-windows.bat limpo` no
 Prompt de Comando). Enquanto a janela preta estiver aberta, o sistema está
-no ar; feche-a para encerrar. Os dados ficam salvos no `db.sqlite3` entre um
-uso e outro.
+no ar; feche-a para encerrar. Os dados ficam salvos no `db.sqlite3` e os
+anexos (notas fiscais) na pasta `media`; ao trocar de versão, copie os dois
+para a pasta nova.
 
 > Isto é só para teste: o usuário `admin`/`admin` e o banco em arquivo não
 > são seguros para uso real. Para a equipe usar, veja [DEPLOY.md](DEPLOY.md).

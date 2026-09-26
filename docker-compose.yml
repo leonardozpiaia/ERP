@@ -23,6 +23,8 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: db
+    volumes:
+      - anexos:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -53,6 +55,7 @@ services:
     volumes:
       - ./backups:/backups
       - ./deploy/backup.sh:/backup.sh:ro
+      - anexos:/anexos:ro
     entrypoint: ["/bin/sh", "/backup.sh"]
     depends_on:
       db:
@@ -60,5 +63,6 @@ services:
 
 volumes:
   banco:
+  anexos:
   caddy_dados:
   caddy_config:

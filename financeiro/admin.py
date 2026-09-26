@@ -150,7 +150,12 @@ class TituloPagarAdmin(TituloAdminBase):
         if not obj.recebimento_id:
             return "Lançamento manual"
         url = reverse("admin:suprimentos_recebimento_change", args=[obj.recebimento_id])
-        return format_html('<a href="{}">{}</a>', url, obj.recebimento)
+        origem = format_html('<a href="{}">{}</a>', url, obj.recebimento)
+        if obj.recebimento.arquivo_nota:
+            origem = format_html(
+                '{} · <a href="{}" target="_blank">Abrir nota fiscal</a>', origem, obj.recebimento.arquivo_nota.url
+            )
+        return origem
 
 
 @admin.register(TituloReceber)

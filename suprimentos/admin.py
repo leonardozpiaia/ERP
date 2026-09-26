@@ -315,15 +315,25 @@ class ItemRecebimentoInline(admin.TabularInline):
         return [item for item in itens if item.saldo > 0]
 
 
+def link_nota(recebimento):
+    if not recebimento or not recebimento.arquivo_nota:
+        return "-"
+    return format_html('<a href="{}" target="_blank">Abrir nota fiscal</a>', recebimento.arquivo_nota.url)
+
+
 @admin.register(Recebimento)
 class RecebimentoAdmin(admin.ModelAdmin):
-    list_display = ["__str__", "pedido", "data", "numero_nota"]
+    list_display = ["__str__", "pedido", "data", "numero_nota", "nota"]
     list_filter = ["pedido__obra"]
     search_fields = ["numero_nota", "pedido__pk"]
     inlines = [ItemRecebimentoInline]
 
     def get_readonly_fields(self, request, obj=None):
         return ["pedido"] if obj else []
+
+    @admin.display(description="nota anexada")
+    def nota(self, obj):
+        return link_nota(obj)
 
     def add_view(self, request, form_url="", extra_context=None):
         if request.method == "GET" and not request.GET.get("pedido"):
