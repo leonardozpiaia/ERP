@@ -14,6 +14,8 @@ from django.db import models
 from django.db.models import F, Sum
 
 from cadastros.models import Fornecedor, Insumo
+from financeiro.condicao import CondicaoInvalida
+from financeiro.condicao import interpretar as interpretar_condicao
 from obras.models import Obra
 from orcamento.models import Etapa, arredondar
 
@@ -37,6 +39,13 @@ def pai(instancia, campo):
         return getattr(instancia, campo)
     except models.ObjectDoesNotExist:
         return None
+
+
+def validar_condicao(condicao):
+    try:
+        interpretar_condicao(condicao)
+    except CondicaoInvalida as erro:
+        raise ValidationError({"condicao_pagamento": str(erro)}) from None
 
 
 def validar_etapa_da_obra(etapa, obra_id):
@@ -186,7 +195,8 @@ class PropostaFornecedor(models.Model):
         "prazo de entrega (dias)", null=True, blank=True
     )
     condicao_pagamento = models.CharField(
-        "condição de pagamento", max_length=100, blank=True, help_text="Ex.: 30/60/90 dias"
+        "condição de pagamento", max_length=100, blank=True,
+        help_text="Ex.: \"30/60/90\", \"28 dias\", \"3x\", \"dia 10\" ou \"à vista\".",
     )
 
     class Meta:
@@ -200,6 +210,9 @@ class PropostaFornecedor(models.Model):
 
     def __str__(self):
         return f"{self.fornecedor} - {self.cotacao}"
+
+    def clean(self):
+        validar_condicao(self.condicao_pagamento)
 
     @property
     def total(self):
@@ -258,7 +271,15 @@ class PedidoCompra(models.Model):
     )
     data = models.DateField("data", default=datetime.date.today)
     previsao_entrega = models.DateField("previsão de entrega", null=True, blank=True)
-    condicao_pagamento = models.CharField("condição de pagamento", max_length=100, blank=True)
+    condicao_pagamento = models.CharField(
+        "condição de pagamento", max_length=100, blank=True,
+        help_text="Prazos contados da data da nota: \"30/60/90\", \"28 dias\", \"3x\", \"dia 10\", "
+                  "\"3x dia 10\" ou \"à vista\".",
+    )
+    primeiro_vencimento = models.DateField(
+        "1º vencimento", null=True, blank=True,
+        help_text="Opcional. Data da 1ª parcela da primeira nota; as demais seguem os intervalos da condição.",
+    )
     status = models.CharField(
         "status", max_length=10, choices=Status.choices, default=Status.RASCUNHO
     )
@@ -279,6 +300,9 @@ class PedidoCompra(models.Model):
 
     def editavel(self):
         return self.status == self.Status.RASCUNHO
+
+    def clean(self):
+        validar_condicao(self.condicao_pagamento)
 
     @property
     def pode_receber(self):
@@ -361,6 +385,13 @@ class Recebimento(models.Model):
             raise ValidationError(
                 {"pedido": "Só é possível receber pedidos aprovados ou entregues parcialmente."}
             )
+        if self.pedido_id:
+            try:
+                interpretar_condicao(self.pedido.condicao_pagamento)
+            except CondicaoInvalida as erro:
+                raise ValidationError(
+                    {"pedido": f"Corrija a condição de pagamento do pedido antes de receber: {erro}"}
+                ) from None
 
 
 class ItemRecebimento(models.Model):

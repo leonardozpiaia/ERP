@@ -246,6 +246,44 @@ class TelasTests(Base):
         pedido.refresh_from_db()
         self.assertEqual(pedido.status, PedidoCompra.Status.PARCIAL)
 
+    def test_condicao_de_pagamento_no_pedido(self):
+        url = reverse("admin:suprimentos_pedidocompra_add")
+        dados = {
+            "obra": self.obra.pk, "fornecedor": self.f1.pk, "data": "10/10/2026", "previsao_entrega": "",
+            "condicao_pagamento": "boleto", "primeiro_vencimento": "", "observacao": "",
+            "itens-TOTAL_FORMS": "0", "itens-INITIAL_FORMS": "0", "itens-MIN_NUM_FORMS": "0",
+            "itens-MAX_NUM_FORMS": "1000",
+            "recebimentos-TOTAL_FORMS": "0", "recebimentos-INITIAL_FORMS": "0",
+            "recebimentos-MIN_NUM_FORMS": "0", "recebimentos-MAX_NUM_FORMS": "1000",
+        }
+        resp = self.client.post(url, dados)
+        self.assertContains(resp, "Não entendi a condição de pagamento")
+        self.assertFalse(PedidoCompra.objects.exists())
+
+        resp = self.client.post(url, {**dados, "condicao_pagamento": "3x dia 10", "primeiro_vencimento": "20/11/2026"})
+        self.assertEqual(resp.status_code, 302)
+        pedido = PedidoCompra.objects.get()
+        self.assertEqual(pedido.primeiro_vencimento, datetime.date(2026, 11, 20))
+        resp = self.client.get(reverse("admin:suprimentos_pedidocompra_change", args=[pedido.pk]))
+        self.assertContains(resp, "3 parcelas: 20/11/2026, 20/12/2026 e 20/01/2027")
+        self.assertContains(resp, "suprimentos/condicao.js")
+
+    def test_previa_da_condicao(self):
+        url = reverse("suprimentos:previa_condicao")
+        resp = self.client.get(url, {"condicao": "30/60", "base": "10/10/2026"})
+        self.assertEqual(resp.json(), {"ok": True, "texto": "Se a nota chegar em 10/10/2026: 2 parcelas: 09/11/2026 e 09/12/2026."})
+        resp = self.client.get(url, {"condicao": "30/60", "base": "10/10/2026", "primeiro": "2026-11-01"})
+        self.assertIn("01/11/2026 e 01/12/2026", resp.json()["texto"])
+        self.assertFalse(self.client.get(url, {"condicao": "boleto"}).json()["ok"])
+
+    def test_recebimento_bloqueado_com_condicao_invalida(self):
+        sc = self.solicitacao()
+        pedido = services.gerar_pedidos(self.cotacao_com_precos(sc))[0]
+        services.aprovar_pedido(pedido)
+        PedidoCompra.objects.filter(pk=pedido.pk).update(condicao_pagamento="boleto")
+        with self.assertRaises(ValidationError):
+            Recebimento(pedido=PedidoCompra.objects.get(pk=pedido.pk)).full_clean()
+
     def test_orcado_comprado(self):
         ItemOrcamento.objects.create(etapa=self.etapa, insumo=self.bloco, quantidade=Decimal("1000"))
         sc = self.solicitacao()

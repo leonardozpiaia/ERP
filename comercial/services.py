@@ -5,6 +5,7 @@ import datetime
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from config.datas import fim_do_mes
 from financeiro.models import Parcela, Titulo
 from orcamento.models import arredondar
 
@@ -16,7 +17,6 @@ from .models import (
     ReajusteContrato,
     ReajusteParcela,
     Unidade,
-    fim_do_mes,
 )
 
 C = ContratoVenda.Status

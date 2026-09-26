@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
@@ -6,6 +8,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from financeiro.admin import moeda
+from financeiro.condicao import previa as previa_condicao
 from financeiro.services import gerar_titulo_do_recebimento
 
 from . import services
@@ -198,17 +201,37 @@ class PedidoCompraAdmin(admin.ModelAdmin):
     list_filter = ["status", "obra", "fornecedor"]
     search_fields = ["pk", "fornecedor__razao_social", "fornecedor__nome_fantasia", "obra__codigo"]
     autocomplete_fields = ["obra", "fornecedor"]
-    readonly_fields = ["status", "cotacao", "total", "receber"]
+    readonly_fields = ["status", "cotacao", "total", "receber", "parcelas_previstas"]
+    fields = [
+        "obra", "fornecedor", "data", "previsao_entrega", "condicao_pagamento", "primeiro_vencimento",
+        "parcelas_previstas", "observacao", "status", "cotacao", "total", "receber",
+    ]
     inlines = [ItemPedidoInline, RecebimentoInline]
     actions = ["aprovar", "cancelar"]
+
+    class Media:
+        js = ["suprimentos/condicao.js"]
 
     def get_readonly_fields(self, request, obj=None):
         if obj and not obj.editavel():
             return [
                 "obra", "fornecedor", "data", "previsao_entrega", "condicao_pagamento",
-                "observacao", *self.readonly_fields,
+                "primeiro_vencimento", "observacao", *self.readonly_fields,
             ]
         return self.readonly_fields
+
+    @admin.display(description="parcelas previstas")
+    def parcelas_previstas(self, obj):
+        base = (obj.previsao_entrega if obj and obj.previsao_entrega else None) or datetime.date.today()
+        ok, texto = previa_condicao(
+            obj.condicao_pagamento if obj else "", base, obj.primeiro_vencimento if obj else None
+        )
+        return format_html(
+            '<div id="previa-condicao" data-url="{}" style="{}">{}</div>',
+            reverse("suprimentos:previa_condicao"),
+            "" if ok else "color: #ba2121; font-weight: bold",
+            texto,
+        )
 
     @admin.display(description="total")
     def total(self, obj):

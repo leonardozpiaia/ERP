@@ -76,6 +76,14 @@ Solicitação ──aprovar──▶ Cotação ──mapa de cotação──▶ 
 Itens que ficaram sem preço, ou pedidos cancelados, voltam como saldo na
 solicitação e podem ser cotados de novo.
 
+**Condição de pagamento** (pedido e proposta do fornecedor), contada a partir da
+data da nota: `30/60/90`, `28 dias`, `à vista`, `3x` (30/60/90), `dia 10`
+(próximo dia 10) ou `3x dia 10` (3 parcelas mensais, todo dia 10). O campo
+opcional **1º vencimento** fixa a data da primeira parcela da primeira nota; as
+demais seguem os intervalos da condição. A tela do pedido mostra as **parcelas
+previstas** enquanto a condição é digitada, e textos que o sistema não entende
+são recusados ao salvar.
+
 O relatório **Orçado × realizado** (link na tela da EAP) compara, por etapa, o
 custo orçado com o valor dos pedidos aprovados e das medições de empreiteiros.
 

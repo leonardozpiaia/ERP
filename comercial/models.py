@@ -5,7 +5,6 @@ séries de parcelas (entrada, mensais, intermediárias...). Ao ser efetivado,
 gera o título a receber no financeiro e marca a unidade como vendida.
 """
 
-import calendar
 import datetime
 from decimal import Decimal
 
@@ -15,6 +14,7 @@ from django.db import models
 from django.db.models import Q, Sum
 
 from cadastros.models import Cliente
+from config.datas import somar_meses
 from financeiro.models import Parcela, Titulo
 from obras.models import Obra
 from orcamento.models import arredondar
@@ -23,15 +23,6 @@ ZERO = Decimal("0")
 DINHEIRO = {"max_digits": 14, "decimal_places": 2}
 
 
-def somar_meses(data, meses):
-    """Mesma data `meses` depois; se o dia não existe no mês, usa o último dia."""
-    total = data.month - 1 + meses
-    ano, mes = data.year + total // 12, total % 12 + 1
-    return data.replace(year=ano, month=mes, day=min(data.day, calendar.monthrange(ano, mes)[1]))
-
-
-def fim_do_mes(data):
-    return data.replace(day=calendar.monthrange(data.year, data.month)[1])
 
 
 class Indice(models.TextChoices):

@@ -1,7 +1,6 @@
 """Regras de negócio do financeiro."""
 
 import datetime
-import re
 from collections import defaultdict
 from decimal import ROUND_DOWN, Decimal
 
@@ -11,18 +10,10 @@ from django.db.models import Sum
 
 from orcamento.models import arredondar
 
+from . import condicao
 from .models import ZERO, Apropriacao, Baixa, ContaBancaria, Parcela, Titulo
 
 CENTAVO = Decimal("0.01")
-
-
-def prazos_da_condicao(condicao):
-    """Dias de cada parcela a partir do texto da condição de pagamento.
-
-    "30/60/90 dias" -> [30, 60, 90]; "28 dias" -> [28]; "à vista" ou vazio -> [0].
-    """
-    dias = [int(n) for n in re.findall(r"\d+", condicao or "")]
-    return dias or [0]
 
 
 def dividir(valor, partes):
@@ -65,14 +56,19 @@ def gerar_titulo_do_recebimento(recebimento):
         descricao=f"Pedido de compra {pedido.pk}",
         recebimento=recebimento,
     )
-    prazos = prazos_da_condicao(pedido.condicao_pagamento)
-    for numero, (dias, valor) in enumerate(zip(prazos, dividir(total, len(prazos))), start=1):
-        Parcela.objects.create(
-            titulo=titulo,
-            numero=numero,
-            vencimento=recebimento.data + datetime.timedelta(days=dias),
-            valor=valor,
+    # O 1º vencimento informado no pedido vale para a primeira nota; as seguintes
+    # contam os prazos a partir da própria data.
+    primeira_nota = not Titulo.objects.filter(recebimento__pedido=pedido).exclude(pk=titulo.pk).exists()
+    try:
+        datas = condicao.vencimentos(
+            pedido.condicao_pagamento,
+            recebimento.data,
+            pedido.primeiro_vencimento if primeira_nota else None,
         )
+    except condicao.CondicaoInvalida as erro:
+        raise ValidationError(f"Condição de pagamento do pedido {pedido.pk}: {erro}") from None
+    for numero, (vencimento, valor) in enumerate(zip(datas, dividir(total, len(datas))), start=1):
+        Parcela.objects.create(titulo=titulo, numero=numero, vencimento=vencimento, valor=valor)
 
     bruto = sum(por_etapa.values(), ZERO)
     for etapa_id, valor in por_etapa.items():

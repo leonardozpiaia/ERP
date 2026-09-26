@@ -9,6 +9,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from cadastros.models import Cliente, Empresa, Fornecedor, Insumo, UnidadeMedida
+from config.datas import somar_meses
 from obras.models import Obra
 from orcamento.models import Etapa, Orcamento
 from suprimentos.models import ItemPedido, ItemRecebimento, PedidoCompra, Recebimento
@@ -73,12 +74,6 @@ class Base(TestCase):
 
 
 class RegrasTests(Base):
-    def test_prazos_da_condicao(self):
-        self.assertEqual(services.prazos_da_condicao("30/60/90 dias"), [30, 60, 90])
-        self.assertEqual(services.prazos_da_condicao("28 dias"), [28])
-        self.assertEqual(services.prazos_da_condicao("à vista"), [0])
-        self.assertEqual(services.prazos_da_condicao(""), [0])
-
     def test_dividir_fecha_centavos(self):
         partes = services.dividir(D("100.00"), 3)
         self.assertEqual(partes, [D("33.34"), D("33.33"), D("33.33")])
@@ -104,6 +99,30 @@ class RegrasTests(Base):
         # Gerar de novo não duplica.
         self.assertEqual(services.gerar_titulo_do_recebimento(receb), titulo)
         self.assertEqual(Titulo.objects.count(), 1)
+
+    def test_primeiro_vencimento_vale_para_a_primeira_nota(self):
+        receb = self.recebimento(condicao="3x")
+        pedido = receb.pedido
+        pedido.primeiro_vencimento = HOJE + datetime.timedelta(days=5)
+        pedido.save()
+        titulo = services.gerar_titulo_do_recebimento(receb)
+        self.assertEqual(
+            [p.vencimento for p in titulo.parcelas.order_by("numero")],
+            [pedido.primeiro_vencimento] + [somar_meses(pedido.primeiro_vencimento, k) for k in (1, 2)],
+        )
+        # Segunda nota do mesmo pedido: prazos contados da própria data.
+        segunda = Recebimento.objects.create(pedido=pedido, numero_nota="556", data=HOJE)
+        item = pedido.itens.first()
+        item.quantidade = item.quantidade + 5
+        item.save()
+        ItemRecebimento.objects.create(recebimento=segunda, item_pedido=item, quantidade=D("5"))
+        titulo2 = services.gerar_titulo_do_recebimento(segunda)
+        self.assertEqual(titulo2.parcelas.order_by("numero").first().vencimento, HOJE + datetime.timedelta(days=30))
+
+    def test_condicao_invalida_nao_gera_titulo(self):
+        receb = self.recebimento(condicao="boleto")
+        with self.assertRaises(ValidationError):
+            services.gerar_titulo_do_recebimento(receb)
 
     def test_baixa_parcial_juros_e_saldo_bancario(self):
         titulo = self.titulo(parcelas=((0, "100"),))

@@ -1,13 +1,16 @@
+import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from config.permissoes import requer
 from contratos.services import medido_por_etapa, medido_sem_etapa
+from financeiro import condicao
 from financeiro.services import pago_por_etapa
 from orcamento.models import Orcamento, arredondar
 
@@ -168,3 +171,20 @@ def orcado_comprado(request, pk):
         "total_percentual": (total_realizado / total_orcado * 100) if total_orcado else None,
     }
     return render(request, "suprimentos/orcado_comprado.html", contexto)
+
+
+def ler_data(texto):
+    for formato in ("%d/%m/%Y", "%Y-%m-%d"):
+        try:
+            return datetime.datetime.strptime((texto or "").strip(), formato).date()
+        except ValueError:
+            continue
+    return None
+
+
+@requer("suprimentos.view_pedidocompra")
+def previa_condicao(request):
+    """Datas de vencimento que a condição de pagamento vai gerar (usada na tela do pedido)."""
+    base = ler_data(request.GET.get("base")) or datetime.date.today()
+    ok, texto = condicao.previa(request.GET.get("condicao", ""), base, ler_data(request.GET.get("primeiro")))
+    return JsonResponse({"ok": ok, "texto": texto})
