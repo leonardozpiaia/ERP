@@ -22,13 +22,14 @@
   <tfoot><tr><td colspan="2"><strong>Total</strong></td><td style="text-align:right"><strong>{{ total|floatformat:"2g" }}</strong></td></tr></tfoot>
 </table>
 <p>Cada parcela será quitada pelo saldo total, sem juros ou desconto. Para pagamentos parciais ou com juros, abra a parcela e lance a baixa nela.</p>
-<form method="post">
+<form method="post" enctype="multipart/form-data">
   {% csrf_token %}
   <fieldset class="module aligned">
     {% for campo in form %}
     <div class="form-row">
       {{ campo.errors }}
       <div class="flex-container">{{ campo.label_tag }} {{ campo }}</div>
+      {% if campo.help_text %}<div class="help">{{ campo.help_text }}</div>{% endif %}
     </div>
     {% endfor %}
   </fieldset>

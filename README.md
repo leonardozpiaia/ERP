@@ -106,6 +106,10 @@ custo orçado com o valor dos pedidos aprovados e das medições de empreiteiros
   ou abra uma parcela para lançar baixa parcial ou com juros. Para estornar,
   exclua a baixa.
 - Depois da primeira baixa, as parcelas do título ficam travadas.
+- **Boleto** (PDF, JPG ou PNG) e **linha digitável** em cada parcela a pagar,
+  e **comprovante** em cada baixa (na hora do pagamento ou depois, pelo link
+  "anexar comprovante"). Na baixa em lote, um único comprovante pode valer
+  para todas as parcelas. Só Financeiro e Diretoria abrem esses arquivos.
 - **Fluxo de caixa**: por dia, semana ou mês, com o realizado (baixas), o
   previsto (parcelas em aberto), os vencidos em aberto e o saldo acumulado a
   partir do saldo bancário. Filtra por empresa e por obra.

@@ -7,17 +7,23 @@ from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from config.permissoes import requer
 from cadastros.models import Empresa
+from config import anexos
+from config.permissoes import requer
 from obras.models import Obra
 
 from . import services
-from .models import ContaBancaria, Parcela, Titulo
+from .models import Baixa, ContaBancaria, Parcela, Titulo
 
 
 class BaixaLoteForm(forms.Form):
     data = forms.DateField(label="Data da baixa", initial=datetime.date.today)
     conta = forms.ModelChoiceField(label="Conta bancária", queryset=ContaBancaria.objects.none())
+    comprovante = forms.FileField(
+        label="Comprovante (opcional)", required=False,
+        validators=[anexos.validar_extensao_documento, anexos.validar_tamanho],
+        help_text="Um único comprovante para todas as parcelas desta baixa (ex.: a TED que pagou tudo).",
+    )
 
     def __init__(self, *args, empresas, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,12 +49,23 @@ def baixa_lote(request):
         messages.error(request, "Você não tem permissão para registrar baixas.")
         return redirect(voltar)
 
-    form = BaixaLoteForm(request.POST or None, empresas=empresas)
+    form = BaixaLoteForm(request.POST or None, request.FILES or None, empresas=empresas)
     if request.method == "POST" and form.is_valid():
         try:
             with transaction.atomic():
-                for parcela in parcelas:
+                baixas = [
                     services.baixar(parcela, form.cleaned_data["conta"], form.cleaned_data["data"])
+                    for parcela in parcelas
+                ]
+                arquivo = form.cleaned_data["comprovante"]
+                if arquivo:
+                    # O arquivo é gravado uma vez e compartilhado por todas as baixas do lote.
+                    primeira = baixas[0]
+                    primeira.arquivo_comprovante = arquivo
+                    primeira.save(update_fields=["arquivo_comprovante"])
+                    Baixa.objects.filter(pk__in=[b.pk for b in baixas[1:]]).update(
+                        arquivo_comprovante=primeira.arquivo_comprovante.name
+                    )
         except ValidationError as erro:
             messages.error(request, "; ".join(erro.messages))
         else:

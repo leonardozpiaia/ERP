@@ -14,6 +14,12 @@ from django.db import models
 from django.db.models import F, Q, Sum
 
 from cadastros.models import Cliente, Empresa, Fornecedor
+from config.anexos import (
+    caminho_boleto,
+    caminho_comprovante,
+    validar_extensao_documento,
+    validar_tamanho,
+)
 from obras.models import Obra
 from orcamento.models import Etapa, arredondar
 from suprimentos.models import Recebimento, pai
@@ -204,6 +210,15 @@ class Parcela(models.Model):
     numero = models.PositiveIntegerField("nº")
     vencimento = models.DateField("vencimento")
     valor = models.DecimalField("valor", validators=POSITIVO, **DINHEIRO)
+    arquivo_boleto = models.FileField(
+        "boleto", upload_to=caminho_boleto, blank=True, max_length=255,
+        validators=[validar_extensao_documento, validar_tamanho],
+        help_text="PDF, JPG ou PNG, até 10 MB.",
+    )
+    linha_digitavel = models.CharField(
+        "linha digitável", max_length=60, blank=True,
+        help_text="Código do boleto, para copiar e colar no banco.",
+    )
 
     objects = ParcelaQuerySet.as_manager()
 
@@ -287,6 +302,11 @@ class Baixa(models.Model):
     juros = models.DecimalField("juros", default=ZERO, validators=NAO_NEGATIVO, **DINHEIRO)
     multa = models.DecimalField("multa", default=ZERO, validators=NAO_NEGATIVO, **DINHEIRO)
     desconto = models.DecimalField("desconto", default=ZERO, validators=NAO_NEGATIVO, **DINHEIRO)
+    arquivo_comprovante = models.FileField(
+        "comprovante", upload_to=caminho_comprovante, blank=True, max_length=255,
+        validators=[validar_extensao_documento, validar_tamanho],
+        help_text="Comprovante do pagamento: PDF, JPG ou PNG, até 10 MB.",
+    )
 
     class Meta:
         verbose_name = "baixa"

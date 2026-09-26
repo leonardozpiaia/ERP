@@ -7,6 +7,8 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
 
+from config import anexos
+
 from .models import (
     ZERO,
     Apropriacao,
@@ -63,8 +65,12 @@ class ParcelaInline(admin.TabularInline):
     formset = ParcelasFormSet
     extra = 0
     min_num = 1
-    fields = ["numero", "vencimento", "valor", "baixado", "situacao"]
-    readonly_fields = ["baixado", "situacao"]
+    fields = ["numero", "vencimento", "valor", "baixado", "situacao", "boleto"]
+    readonly_fields = ["baixado", "situacao", "boleto"]
+
+    @admin.display(description="boleto")
+    def boleto(self, obj):
+        return anexos.link(obj.arquivo_boleto, "Abrir boleto") if obj.pk else "-"
 
     @admin.display(description="baixado")
     def baixado(self, obj):
@@ -215,13 +221,21 @@ class BaixaInline(admin.TabularInline):
     model = Baixa
     formset = BaixasFormSet
     extra = 0
-    fields = ["data", "conta", "valor", "juros", "multa", "desconto", "movimentado"]
-    readonly_fields = ["movimentado"]
+    fields = ["data", "conta", "valor", "juros", "multa", "desconto", "movimentado", "arquivo_comprovante", "comprovante"]
+    readonly_fields = ["movimentado", "comprovante"]
     verbose_name_plural = "baixas (exclua uma baixa para estorná-la)"
 
     @admin.display(description="valor movimentado")
     def movimentado(self, obj):
         return moeda(obj.valor_movimentado) if obj.pk else "-"
+
+    @admin.display(description="")
+    def comprovante(self, obj):
+        if not obj.pk:
+            return ""
+        url = reverse("admin:financeiro_baixa_change", args=[obj.pk])
+        texto = "trocar comprovante" if obj.arquivo_comprovante else "anexar comprovante"
+        return format_html('<a href="{}">{}</a>', url, texto)
 
     def has_change_permission(self, request, obj=None):
         # Baixa lançada não se edita: estorne (exclua) e lance de novo.
@@ -247,7 +261,7 @@ class ParcelaAdminBase(admin.ModelAdmin):
     list_filter = [SituacaoFilter, "titulo__empresa", "titulo__obra"]
     list_select_related = ["titulo__fornecedor", "titulo__cliente", "titulo__obra"]
     fields = ["titulo_link", "numero", "vencimento", "valor", "saldo_atual", "situacao"]
-    readonly_fields = fields
+    readonly_fields = list(fields)
     inlines = [BaixaInline]
     actions = ["baixar"]
     ordering = ["vencimento"]
@@ -319,6 +333,42 @@ class ParcelaAdminBase(admin.ModelAdmin):
 class ParcelaPagarAdmin(ParcelaAdminBase):
     pessoa_campo = "fornecedor"
     nome_pessoa = "razao_social"
+    fields = [*ParcelaAdminBase.fields, "arquivo_boleto", "linha_digitavel"]
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        campo = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == "linha_digitavel":
+            campo.widget.attrs.update({"size": 60, "style": "font-family: monospace"})
+        return campo
+
+    def get_list_display(self, request):
+        return [*super().get_list_display(request), "boleto"]
+
+    @admin.display(description="boleto")
+    def boleto(self, obj):
+        return anexos.link(obj.arquivo_boleto, "Abrir")
+
+
+@admin.register(Baixa)
+class BaixaAdmin(admin.ModelAdmin):
+    """Só para anexar ou trocar o comprovante de uma baixa já lançada (não aparece no menu)."""
+
+    fields = ["parcela", "data", "conta", "valor", "juros", "multa", "desconto", "arquivo_comprovante"]
+    readonly_fields = ["parcela", "data", "conta", "valor", "juros", "multa", "desconto"]
+
+    def get_model_perms(self, request):
+        return {}
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def response_change(self, request, obj):
+        self.message_user(request, "Comprovante salvo.")
+        modelo = "parcelapagar" if obj.parcela.titulo.tipo == "PAGAR" else "parcelareceber"
+        return HttpResponseRedirect(reverse(f"admin:financeiro_{modelo}_change", args=[obj.parcela_id]))
 
 
 @admin.register(ParcelaReceber)
