@@ -94,6 +94,19 @@ class TelasTests(TestCase):
         self.assertContains(resp, "Fundações")
         self.assertContains(resp, marca.NOME)  # cabeçalho do painel na tela própria
 
+    def test_telas_proprias_usam_o_tema(self):
+        orc = Orcamento.objects.get()
+        for url in [
+            reverse("orcamento:eap", args=[orc.pk]),
+            reverse("orcamento:importar"),
+            reverse("financeiro:fluxo_caixa"),
+            reverse("comercial:espelho"),
+            reverse("contratos:retencoes"),
+            reverse("suprimentos:orcado_comprado", args=[orc.pk]),
+        ]:
+            with self.subTest(url=url):
+                self.assertContains(self.client.get(url), "erp/tema.css")
+
     def test_telas_do_admin_abrem(self):
         orc = Orcamento.objects.get()
         etapa = orc.etapas.first()

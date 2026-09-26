@@ -3,7 +3,7 @@
 
 {% block title %}Orçado × realizado - {{ orcamento }}{% endblock %}
 
-{% block extrastyle %}
+{% block extrastyle %}{{ block.super }}
 <style>
   table.oc { width: 100%; }
   table.oc td.num, table.oc th.num { text-align: right; white-space: nowrap; }

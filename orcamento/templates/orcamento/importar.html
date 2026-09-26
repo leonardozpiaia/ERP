@@ -1,6 +1,6 @@
 {% extends "admin/base_site.html" %}
 
-{% block extrastyle %}
+{% block extrastyle %}{{ block.super }}
 <style>
   .passos { display: grid; gap: 4px; margin: 0 0 1.2em; padding-left: 1.2em; max-width: 80ch; }
   .formulario .form-row { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; }

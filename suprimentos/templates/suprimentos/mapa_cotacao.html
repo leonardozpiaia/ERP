@@ -3,7 +3,7 @@
 
 {% block title %}Mapa de cotação - {{ cotacao }}{% endblock %}
 
-{% block extrastyle %}
+{% block extrastyle %}{{ block.super }}
 <style>
   table.mapa { width: 100%; }
   table.mapa td.num, table.mapa th.num { text-align: right; white-space: nowrap; }

@@ -1,6 +1,6 @@
 {% extends "admin/base_site.html" %}
 
-{% block extrastyle %}
+{% block extrastyle %}{{ block.super }}
 <style>
   form.filtros { display: flex; flex-wrap: wrap; gap: 1em; align-items: end; margin-bottom: 1.5em; }
   form.filtros label { display: block; font-weight: bold; margin-bottom: .2em; }
